@@ -1,0 +1,4 @@
+::res://::1422003534
+icon.png::ImageTexture::1422001887::
+new_scene.scn::PackedScene::1422002904::
+recursive_reference_print_crash.gd::GDScript::1422003534::
