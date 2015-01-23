@@ -37,7 +37,7 @@
 #include "scene/gui/scroll_bar.h"
 #include "scene/gui/tool_button.h"
 #include "scene/gui/file_dialog.h"
-#include "scene/gui/empty_control.h"
+
 #include "scene/resources/animation.h"
 #include "scene/animation/animation_cache.h"
 #include "scene_tree_editor.h"
@@ -157,7 +157,7 @@ class AnimationKeyEditor : public VBoxContainer  {
 	PopupMenu *track_menu;
 	PopupMenu *type_menu;
 
-	EmptyControl *ec;
+	Control *ec;
 	TextureFrame *zoomicon;
 	HSlider *zoom;
 	//MenuButton *menu;
@@ -168,6 +168,11 @@ class AnimationKeyEditor : public VBoxContainer  {
 	ToolButton *move_up_button;
 	ToolButton *move_down_button;
 	ToolButton *remove_button;
+
+	ConfirmationDialog *optimize_dialog;
+	SpinBox *optimize_linear_error;
+	SpinBox *optimize_angular_error;
+	SpinBox *optimize_max_angle;
 
 	SpinBox *step;
 
@@ -257,6 +262,7 @@ class AnimationKeyEditor : public VBoxContainer  {
 	StringName alc;
 
 	void _animation_changed();
+	void _animation_optimize();
 
 	void _scroll_changed(double);
 

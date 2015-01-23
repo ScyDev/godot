@@ -38,7 +38,7 @@
 
 bool CanvasItem::is_visible() const {
 
-	if (!is_inside_scene())
+	if (!is_inside_tree())
 		return false;
 
 	const CanvasItem *p=this;
@@ -92,7 +92,7 @@ void CanvasItem::show() {
 	hidden=false;
 	VisualServer::get_singleton()->canvas_item_set_visible(canvas_item,true);
 
-	if (!is_inside_scene())
+	if (!is_inside_tree())
 		return;
 
 	if (is_visible()) {
@@ -106,11 +106,11 @@ void CanvasItem::hide() {
 	if (hidden)
 		return;
 
-	bool propagate=is_inside_scene() && is_visible();
+	bool propagate=is_inside_tree() && is_visible();
 	hidden=true;
 	VisualServer::get_singleton()->canvas_item_set_visible(canvas_item,false);
 
-	if (!is_inside_scene())
+	if (!is_inside_tree())
 		return;
 	if (propagate)
 		_propagate_visibility_changed(false);
@@ -147,7 +147,7 @@ void CanvasItem::_update_callback() {
 
 
 
-	if (!is_inside_scene()) {
+	if (!is_inside_tree()) {
 		pending_update=false;
 		return;
 	}
@@ -225,7 +225,7 @@ void CanvasItem::_sort_children() {
 
 	pending_children_sort=false;
 
-	if (!is_inside_scene())
+	if (!is_inside_tree())
 		return;
 
 	for(int i=0;i<get_child_count();i++) {
@@ -243,7 +243,7 @@ void CanvasItem::_sort_children() {
 
 void CanvasItem::_raise_self() {
 
-	if (!is_inside_scene())
+	if (!is_inside_tree())
 		return;
 
 	VisualServer::get_singleton()->canvas_item_raise(canvas_item);
@@ -283,7 +283,7 @@ void CanvasItem::_enter_canvas() {
 		group = "root_canvas"+itos(canvas.get_id());
 
 		add_to_group(group);
-		get_scene()->call_group(SceneMainLoop::GROUP_CALL_UNIQUE,group,"_raise_self");
+		get_tree()->call_group(SceneTree::GROUP_CALL_UNIQUE,group,"_raise_self");
 
 	} else {
 
@@ -313,7 +313,7 @@ void CanvasItem::_notification(int p_what) {
 
 
 	switch(p_what) {
-		case NOTIFICATION_ENTER_SCENE: {
+		case NOTIFICATION_ENTER_TREE: {
 
 			first_draw=true;
 			pending_children_sort=false;
@@ -324,14 +324,14 @@ void CanvasItem::_notification(int p_what) {
 			}
 			_enter_canvas();
 			if (!block_transform_notify && !xform_change.in_list()) {
-				get_scene()->xform_change_list.add(&xform_change);
+				get_tree()->xform_change_list.add(&xform_change);
 			}
 		} break;
 		case NOTIFICATION_MOVED_IN_PARENT: {
 
 
 			if (group!="") {
-				get_scene()->call_group(SceneMainLoop::GROUP_CALL_UNIQUE,group,"_raise_self");
+				get_tree()->call_group(SceneTree::GROUP_CALL_UNIQUE,group,"_raise_self");
 			} else {
 				CanvasItem *p = get_parent_item();
 				ERR_FAIL_COND(!p);
@@ -340,9 +340,9 @@ void CanvasItem::_notification(int p_what) {
 
 
 		} break;
-		case NOTIFICATION_EXIT_SCENE: {
+		case NOTIFICATION_EXIT_TREE: {
 			if (xform_change.in_list())
-				get_scene()->xform_change_list.remove(&xform_change);
+				get_tree()->xform_change_list.remove(&xform_change);
 			_exit_canvas();
 			if (C) {
 				get_parent()->cast_to<CanvasItem>()->children_items.erase(C);
@@ -379,7 +379,7 @@ bool CanvasItem::_is_visible_() const {
 
 void CanvasItem::update() {
 
-	if (!is_inside_scene())
+	if (!is_inside_tree())
 		return;
 	if (pending_update)
 		return;
@@ -406,7 +406,7 @@ void CanvasItem::set_as_toplevel(bool p_toplevel) {
 	if (toplevel==p_toplevel)
 		return;
 
-	if (!is_inside_scene()) {
+	if (!is_inside_tree()) {
 		toplevel=p_toplevel;
 		return;
 	}
@@ -630,8 +630,8 @@ void CanvasItem::_notify_transform(CanvasItem *p_node) {
 
 	if (!p_node->xform_change.in_list()) {
 		if (!p_node->block_transform_notify) {
-			if (p_node->is_inside_scene())
-				get_scene()->xform_change_list.add(&p_node->xform_change);
+			if (p_node->is_inside_tree())
+				get_tree()->xform_change_list.add(&p_node->xform_change);
 		}
 	}
 
@@ -648,13 +648,13 @@ void CanvasItem::_notify_transform(CanvasItem *p_node) {
 
 Rect2 CanvasItem::get_viewport_rect() const {
 
-	ERR_FAIL_COND_V(!is_inside_scene(),Rect2());
+	ERR_FAIL_COND_V(!is_inside_tree(),Rect2());
 	return get_viewport()->get_visible_rect();
 }
 
 RID CanvasItem::get_canvas() const {
 
-	ERR_FAIL_COND_V(!is_inside_scene(),RID());
+	ERR_FAIL_COND_V(!is_inside_tree(),RID());
 
 	if (canvas_layer)
 		return canvas_layer->get_world_2d()->get_canvas();
@@ -677,7 +677,7 @@ CanvasItem *CanvasItem::get_toplevel() const {
 
 Ref<World2D> CanvasItem::get_world_2d() const {
 
-	ERR_FAIL_COND_V(!is_inside_scene(),Ref<World2D>());
+	ERR_FAIL_COND_V(!is_inside_tree(),Ref<World2D>());
 
 	CanvasItem *tl=get_toplevel();
 
@@ -693,7 +693,7 @@ Ref<World2D> CanvasItem::get_world_2d() const {
 
 RID CanvasItem::get_viewport_rid() const {
 
-	ERR_FAIL_COND_V(!is_inside_scene(),RID());
+	ERR_FAIL_COND_V(!is_inside_tree(),RID());
 	return get_viewport()->get_viewport();
 }
 
@@ -720,6 +720,95 @@ bool CanvasItem::is_draw_behind_parent_enabled() const{
 	return behind;
 }
 
+void CanvasItem::set_shader(const Ref<Shader>& p_shader) {
+
+	ERR_FAIL_COND(p_shader.is_valid() && p_shader->get_mode()!=Shader::MODE_CANVAS_ITEM);
+
+#ifdef TOOLS_ENABLED
+
+	if (shader.is_valid()) {
+		shader->disconnect("changed",this,"_shader_changed");
+	}
+#endif
+	shader=p_shader;
+
+#ifdef TOOLS_ENABLED
+
+	if (shader.is_valid()) {
+		shader->connect("changed",this,"_shader_changed");
+	}
+#endif
+
+	RID rid;
+	if (shader.is_valid())
+		rid=shader->get_rid();
+	VS::get_singleton()->canvas_item_set_shader(canvas_item,rid);
+	_change_notify(); //properties for shader exposed
+}
+
+void CanvasItem::set_use_parent_shader(bool p_use_parent_shader) {
+
+	use_parent_shader=p_use_parent_shader;
+	VS::get_singleton()->canvas_item_set_use_parent_shader(canvas_item,p_use_parent_shader);
+}
+
+bool CanvasItem::get_use_parent_shader() const{
+
+	return use_parent_shader;
+}
+
+Ref<Shader> CanvasItem::get_shader() const{
+
+	return shader;
+}
+
+void CanvasItem::set_shader_param(const StringName& p_param,const Variant& p_value) {
+
+	VS::get_singleton()->canvas_item_set_shader_param(canvas_item,p_param,p_value);
+}
+
+Variant CanvasItem::get_shader_param(const StringName& p_param) const {
+
+	return VS::get_singleton()->canvas_item_get_shader_param(canvas_item,p_param);
+}
+
+bool CanvasItem::_set(const StringName& p_name, const Variant& p_value) {
+
+	if (shader.is_valid()) {
+		StringName pr = shader->remap_param(p_name);
+		if (pr) {
+			set_shader_param(pr,p_value);
+			return true;
+		}
+	}
+	return false;
+}
+
+bool CanvasItem::_get(const StringName& p_name,Variant &r_ret) const{
+
+	if (shader.is_valid()) {
+		StringName pr = shader->remap_param(p_name);
+		if (pr) {
+			r_ret=get_shader_param(pr);
+			return true;
+		}
+	}
+	return false;
+
+}
+void CanvasItem::_get_property_list( List<PropertyInfo> *p_list) const{
+
+	if (shader.is_valid()) {
+		shader->get_param_list(p_list);
+	}
+}
+
+#ifdef TOOLS_ENABLED
+void CanvasItem::_shader_changed() {
+
+	_change_notify();
+}
+#endif
 
 void CanvasItem::_bind_methods() {
 
@@ -761,7 +850,9 @@ void CanvasItem::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("_set_on_top","on_top"),&CanvasItem::_set_on_top);
 	ObjectTypeDB::bind_method(_MD("_is_on_top"),&CanvasItem::_is_on_top);
-
+#ifdef TOOLS_ENABLED
+	ObjectTypeDB::bind_method(_MD("_shader_changed"),&CanvasItem::_shader_changed);
+#endif
 	//ObjectTypeDB::bind_method(_MD("get_transform"),&CanvasItem::get_transform);
 
 	ObjectTypeDB::bind_method(_MD("draw_line","from","to","color","width"),&CanvasItem::draw_line,DEFVAL(1.0));
@@ -786,15 +877,22 @@ void CanvasItem::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("get_world_2d"),&CanvasItem::get_world_2d);
 	//ObjectTypeDB::bind_method(_MD("get_viewport"),&CanvasItem::get_viewport);
 
+	ObjectTypeDB::bind_method(_MD("set_shader","shader"),&CanvasItem::set_shader);
+	ObjectTypeDB::bind_method(_MD("get_shader"),&CanvasItem::get_shader);
+	ObjectTypeDB::bind_method(_MD("set_use_parent_shader","enable"),&CanvasItem::set_use_parent_shader);
+	ObjectTypeDB::bind_method(_MD("get_use_parent_shader"),&CanvasItem::get_use_parent_shader);
+
 	BIND_VMETHOD(MethodInfo("_draw"));
 
 	ADD_PROPERTY( PropertyInfo(Variant::BOOL,"visibility/visible"), _SCS("_set_visible_"),_SCS("_is_visible_") );
 	ADD_PROPERTY( PropertyInfo(Variant::REAL,"visibility/opacity",PROPERTY_HINT_RANGE, "0,1,0.01"), _SCS("set_opacity"),_SCS("get_opacity") );
 	ADD_PROPERTY( PropertyInfo(Variant::REAL,"visibility/self_opacity",PROPERTY_HINT_RANGE, "0,1,0.01"), _SCS("set_self_opacity"),_SCS("get_self_opacity") );
-	ADD_PROPERTY( PropertyInfo(Variant::BOOL,"visibility/behind_parent"), _SCS("set_draw_behind_parent"),_SCS("is_draw_behind_parent_enabled") );
+	ADD_PROPERTYNZ( PropertyInfo(Variant::BOOL,"visibility/behind_parent"), _SCS("set_draw_behind_parent"),_SCS("is_draw_behind_parent_enabled") );
 	ADD_PROPERTY( PropertyInfo(Variant::BOOL,"visibility/on_top",PROPERTY_HINT_NONE,"",0), _SCS("_set_on_top"),_SCS("_is_on_top") ); //compatibility
 
 	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"visibility/blend_mode",PROPERTY_HINT_ENUM, "Mix,Add,Sub,Mul,PMAlpha"), _SCS("set_blend_mode"),_SCS("get_blend_mode") );
+	ADD_PROPERTYNZ( PropertyInfo(Variant::OBJECT,"shader/shader",PROPERTY_HINT_RESOURCE_TYPE, "CanvasItemShader,CanvasItemShaderGraph"), _SCS("set_shader"),_SCS("get_shader") );
+	ADD_PROPERTYNZ( PropertyInfo(Variant::BOOL,"shader/use_parent"), _SCS("set_use_parent_shader"),_SCS("get_use_parent_shader") );
 	//exporting these two things doesn't really make much sense i think
 	//ADD_PROPERTY( PropertyInfo(Variant::BOOL,"transform/toplevel"), _SCS("set_as_toplevel"),_SCS("is_set_as_toplevel") );
 	//ADD_PROPERTY(PropertyInfo(Variant::BOOL,"transform/notify"),_SCS("set_transform_notify"),_SCS("is_transform_notify_enabled"));
@@ -824,7 +922,7 @@ void CanvasItem::_bind_methods() {
 
 Matrix32 CanvasItem::get_canvas_transform() const {
 
-	ERR_FAIL_COND_V(!is_inside_scene(),Matrix32());
+	ERR_FAIL_COND_V(!is_inside_tree(),Matrix32());
 
 	if (canvas_layer)
 		return canvas_layer->get_transform();
@@ -835,7 +933,7 @@ Matrix32 CanvasItem::get_canvas_transform() const {
 
 Matrix32 CanvasItem::get_viewport_transform() const {
 
-	ERR_FAIL_COND_V(!is_inside_scene(),Matrix32());
+	ERR_FAIL_COND_V(!is_inside_tree(),Matrix32());
 
 	if (canvas_layer) {
 
@@ -871,6 +969,7 @@ CanvasItem::CanvasItem() : xform_change(this) {
 	block_transform_notify=false;
 //	viewport=NULL;
 	canvas_layer=NULL;
+	use_parent_shader=false;
 	global_invalid=true;
 
 	C=NULL;

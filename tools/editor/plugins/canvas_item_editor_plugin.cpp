@@ -1055,7 +1055,7 @@ void CanvasItemEditor::_viewport_input_event(const InputEvent& p_event) {
 				editor_selection->clear();
 				editor_selection->add_node(c);
 				//reselect
-				if (get_scene()->is_editor_hint()) {
+				if (get_tree()->is_editor_hint()) {
 					editor->call("edit_node",c);
 				}
 
@@ -1791,7 +1791,7 @@ void CanvasItemEditor::_notification(int p_what) {
 		}
 	}
 
-	if (p_what==NOTIFICATION_ENTER_SCENE) {
+	if (p_what==NOTIFICATION_ENTER_TREE) {
 
 		select_sb->set_texture( get_icon("EditorRect2D","EditorIcons") );
 		for(int i=0;i<4;i++) {
@@ -1814,7 +1814,7 @@ void CanvasItemEditor::_notification(int p_what) {
 
 	if (p_what==NOTIFICATION_READY) {
 
-		get_scene()->connect("node_removed",this,"_node_removed");
+		get_tree()->connect("node_removed",this,"_node_removed");
 	}
 
 	if (p_what==NOTIFICATION_DRAW) {
@@ -2307,7 +2307,7 @@ void CanvasItemEditor::_popup_callback(int p_op) {
 		} break;
 		case ANIM_INSERT_ROT: {
 
-			key_pos = key_rot_button->is_pressed();
+			key_rot = key_rot_button->is_pressed();
 		} break;
 		case ANIM_INSERT_SCALE: {
 
@@ -2683,6 +2683,16 @@ void CanvasItemEditor::add_control_to_menu_panel(Control *p_control) {
 	hb->add_child(p_control);
 }
 
+HSplitContainer *CanvasItemEditor::get_palette_split() {
+
+	return palette_split;
+}
+
+VSplitContainer *CanvasItemEditor::get_bottom_split() {
+
+	return bottom_split;
+}
+
 CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 
 	tool = TOOL_SELECT;
@@ -2697,14 +2707,23 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	add_child( hb );
 	hb->set_area_as_parent_rect();
 
+	bottom_split = memnew( VSplitContainer );
+	bottom_split->set_v_size_flags(SIZE_EXPAND_FILL);
+	add_child(bottom_split);
+
+	palette_split = memnew( HSplitContainer);
+	palette_split->set_v_size_flags(SIZE_EXPAND_FILL);
+	bottom_split->add_child(palette_split);
+
 	Control *vp_base = memnew (Control);
-	add_child(vp_base);
 	vp_base->set_v_size_flags(SIZE_EXPAND_FILL);
+	palette_split->add_child(vp_base);
 
 	Control *vp = memnew (Control);
 	vp_base->add_child(vp);
 	vp->set_area_as_parent_rect();
 	vp->add_child(p_editor->get_scene_root());
+
 
 	viewport = memnew( Control );
 	vp_base->add_child(viewport);
@@ -2878,7 +2897,7 @@ CanvasItemEditor::CanvasItemEditor(EditorNode *p_editor) {
 	p->add_separator();
 	p->add_item("Copy Pose",ANIM_COPY_POSE);
 	p->add_item("Paste Pose",ANIM_PASTE_POSE);
-	p->add_item("Clear Pose",ANIM_CLEAR_POSE,KEY_MASK_ALT|KEY_K);
+	p->add_item("Clear Pose",ANIM_CLEAR_POSE,KEY_MASK_SHIFT|KEY_K);
 
 	value_dialog = memnew( AcceptDialog );
 	value_dialog->set_title("Set a Value");

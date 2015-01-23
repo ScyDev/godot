@@ -1083,44 +1083,13 @@ def build_gles2_headers( target, source, env ):
 
 def update_version():
 
-	rev = 0
+	rev = "custom_build"
 	
-	try:
-		f = open("custom_version.txt","rb")
-		rev = int( f.readline().strip() )
-	except:
-		pass
-			
-	if (rev==0):	
-		try:							
-			f = open(".svn/entries")
-			line = f.readline();
-			next_rev = False
-			while line != "":
-				line = line.rstrip('\r\n')
-				if next_rev:
-					rev = line
-					break
-				if line == "dir":
-					next_rev = True
-				line = f.readline();
-				
-			if rev != 0:
-				f = open("version.py")
-				ver = f.read()
-				import re
-				ver = re.sub(r'\$Rev: \d* \$', '$Rev: '+str(rev)+' $', ver)
-				f = open("version.py", "wb")
-				f.write(ver)
-				f.close()
-				
-		except:
-			pass
-
+	if (os.getenv("BUILD_REVISION")!=None):
+		rev=os.getenv("BUILD_REVISION")
+		print("Using custom revision: "+rev)
 	import version
-
-	rev=version.revision
-	rev=rev[5:-1].strip()
+	
 
 	f=open("core/version.h","wb")
 	f.write("#define VERSION_SHORT_NAME "+str(version.short_name)+"\n")
@@ -1346,4 +1315,40 @@ def save_active_platforms(apnames,ap):
 		wf = x+"/logo.h"
 		logow = open(wf,"wb")
 		logow.write(str)
+
+
+def colored(sys,env):
+
+	#If the output is not a terminal, do nothing
+	if not sys.stdout.isatty():
+		return
+
+	colors = {}
+	colors['cyan']   = '\033[96m'
+	colors['purple'] = '\033[95m'
+	colors['blue']   = '\033[94m'
+	colors['green']  = '\033[92m'
+	colors['yellow'] = '\033[93m'
+	colors['red']    = '\033[91m'
+	colors['end']    = '\033[0m'
+
+	compile_source_message        = '%sCompiling %s==> %s$SOURCE%s' % (colors['blue'], colors['purple'], colors['yellow'], colors['end'])
+	java_compile_source_message   = '%sCompiling %s==> %s$SOURCE%s' % (colors['blue'], colors['purple'], colors['yellow'], colors['end'])
+	compile_shared_source_message = '%sCompiling shared %s==> %s$SOURCE%s' % (colors['blue'], colors['purple'], colors['yellow'], colors['end'])
+	link_program_message          = '%sLinking Program        %s==> %s$TARGET%s' % (colors['red'], colors['purple'], colors['yellow'], colors['end'])
+	link_library_message          = '%sLinking Static Library %s==> %s$TARGET%s' % (colors['red'], colors['purple'], colors['yellow'], colors['end'])
+	ranlib_library_message        = '%sRanlib Library         %s==> %s$TARGET%s' % (colors['red'], colors['purple'], colors['yellow'], colors['end'])
+	link_shared_library_message   = '%sLinking Shared Library %s==> %s$TARGET%s' % (colors['red'], colors['purple'], colors['yellow'], colors['end'])
+	java_library_message          = '%sCreating Java Archive  %s==> %s$TARGET%s' % (colors['red'], colors['purple'], colors['yellow'], colors['end'])
+
+	env.Append( CXXCOMSTR=[compile_source_message] )
+	env.Append( CCCOMSTR=[compile_source_message] )
+	env.Append( SHCCCOMSTR=[compile_shared_source_message] )
+	env.Append( SHCXXCOMSTR=[compile_shared_source_message] )
+	env.Append( ARCOMSTR=[link_library_message] )
+	env.Append( RANLIBCOMSTR=[ranlib_library_message] )
+	env.Append( SHLINKCOMSTR=[link_shared_library_message] )
+	env.Append( LINKCOMSTR=[link_program_message] )
+	env.Append( JARCOMSTR=[java_library_message] )
+	env.Append( JAVACCOMSTR=[java_compile_source_message] )
 

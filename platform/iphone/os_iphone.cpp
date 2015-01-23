@@ -31,7 +31,7 @@
 #include "os_iphone.h"
 
 #include "drivers/gles2/rasterizer_gles2.h"
-#include "drivers/gles1/rasterizer_gles1.h"
+
 
 #include "servers/visual/visual_server_raster.h"
 #include "servers/visual/visual_server_wrap_mt.h"
@@ -40,6 +40,7 @@
 #include "audio_driver_iphone.h"
 
 #include "core/os/dir_access.h"
+#include "core/os/file_access.h"
 #include "core/globals.h"
 
 #include "sem_iphone.h"
@@ -51,7 +52,7 @@ int OSIPhone::get_video_driver_count() const {
 
 const char * OSIPhone::get_video_driver_name(int p_driver) const {
 
-	return "openglES";
+	return "GLES2";
 };
 
 OSIPhone* OSIPhone::get_singleton() {
@@ -77,7 +78,7 @@ void OSIPhone::set_data_dir(String p_dir) {
 	DirAccess* da = DirAccess::open(p_dir);
 
 	data_dir = da->get_current_dir();
-
+	printf("setting data dir to %ls from %ls\n", data_dir.c_str(), p_dir.c_str());
 	memdelete(da);
 };
 
@@ -105,13 +106,9 @@ void OSIPhone::initialize(const VideoMode& p_desired,int p_video_driver,int p_au
 	supported_orientations |= ((GLOBAL_DEF("video_mode/allow_vertical", false)?1:0) << PortraitDown);
 	supported_orientations |= ((GLOBAL_DEF("video_mode/allow_vertical_flipped", false)?1:0) << PortraitUp);
 
-#ifdef GLES1_OVERRIDE
-	rasterizer = memnew( RasterizerGLES1 );
-#else
 	rasterizer_gles22 = memnew( RasterizerGLES2(false, false, false) );
 	rasterizer = rasterizer_gles22;
 	rasterizer_gles22->set_base_framebuffer(gl_view_base_fb);
-#endif
 
 	visual_server = memnew( VisualServerRaster(rasterizer) );
 	if (get_render_thread_mode() != RENDER_THREAD_UNSAFE) {
@@ -211,14 +208,16 @@ void OSIPhone::key(uint32_t p_key, bool p_pressed) {
 
 void OSIPhone::mouse_button(int p_idx, int p_x, int p_y, bool p_pressed, bool p_doubleclick, bool p_use_as_mouse) {
 
-	InputEvent ev;
-	ev.type = InputEvent::SCREEN_TOUCH;
-	ev.ID = ++last_event_id;
-	ev.screen_touch.index=p_idx;
-	ev.screen_touch.pressed=p_pressed;
-	ev.screen_touch.x=p_x;
-	ev.screen_touch.y=p_y;
-	queue_event(ev);
+	if (!GLOBAL_DEF("debug/disable_touch", false)) {
+		InputEvent ev;
+		ev.type = InputEvent::SCREEN_TOUCH;
+		ev.ID = ++last_event_id;
+		ev.screen_touch.index=p_idx;
+		ev.screen_touch.pressed=p_pressed;
+		ev.screen_touch.x=p_x;
+		ev.screen_touch.y=p_y;
+		queue_event(ev);
+	};
 
 	if (p_use_as_mouse) {
 
@@ -234,6 +233,7 @@ void OSIPhone::mouse_button(int p_idx, int p_x, int p_y, bool p_pressed, bool p_
 		ev.mouse_button.x = ev.mouse_button.global_x = p_x;
 		ev.mouse_button.y = ev.mouse_button.global_y = p_y;
 
+		input->set_mouse_pos(Point2(ev.mouse_motion.x,ev.mouse_motion.y));
 		ev.mouse_button.button_index = BUTTON_LEFT;
 		ev.mouse_button.doubleclick = p_doubleclick;
 		ev.mouse_button.pressed = p_pressed;
@@ -246,15 +246,18 @@ void OSIPhone::mouse_button(int p_idx, int p_x, int p_y, bool p_pressed, bool p_
 
 void OSIPhone::mouse_move(int p_idx, int p_prev_x, int p_prev_y, int p_x, int p_y, bool p_use_as_mouse) {
 
-	InputEvent ev;
-	ev.type=InputEvent::SCREEN_DRAG;
-	ev.ID = ++last_event_id;
-	ev.screen_drag.index=p_idx;
-	ev.screen_drag.x=p_x;
-	ev.screen_drag.y=p_y;
-	ev.screen_drag.relative_x = p_x - p_prev_x;
-	ev.screen_drag.relative_y = p_y - p_prev_y;
-	queue_event(ev);
+	if (!GLOBAL_DEF("debug/disable_touch", false)) {
+
+		InputEvent ev;
+		ev.type=InputEvent::SCREEN_DRAG;
+		ev.ID = ++last_event_id;
+		ev.screen_drag.index=p_idx;
+		ev.screen_drag.x=p_x;
+		ev.screen_drag.y=p_y;
+		ev.screen_drag.relative_x = p_x - p_prev_x;
+		ev.screen_drag.relative_y = p_y - p_prev_y;
+		queue_event(ev);
+	};
 
 	if (p_use_as_mouse) {
 		InputEvent ev;
@@ -485,13 +488,22 @@ String OSIPhone::get_locale() const {
 	return locale_code;
 }
 
-extern bool _play_video(String p_path, float p_volume);
+extern bool _play_video(String p_path, float p_volume, String p_audio_track, String p_subtitle_track);
 extern bool _is_video_playing();
 extern void _pause_video();
+extern void _unpause_video();
 extern void _stop_video();
+extern void _focus_out_video();
 
-Error OSIPhone::native_video_play(String p_path, float p_volume) {
-    if ( _play_video(p_path, p_volume) )
+Error OSIPhone::native_video_play(String p_path, float p_volume, String p_audio_track, String p_subtitle_track) {
+	FileAccess* f = FileAccess::open(p_path, FileAccess::READ);
+	bool exists = f && f->is_open();
+	printf("file exists for %ls, %i, %p\n", p_path.c_str(), (int)exists, f);
+	if (f)
+		memdelete(f);
+	if (!exists)
+		return FAILED;
+    if ( _play_video(p_path, p_volume, p_audio_track, p_subtitle_track) )
 		return OK;
 	return FAILED;
 }
@@ -504,6 +516,14 @@ void OSIPhone::native_video_pause() {
 	if (native_video_is_playing())
     	_pause_video();
 }
+
+void OSIPhone::native_video_unpause() {
+	_unpause_video();
+};
+
+void OSIPhone::native_video_focus_out() {
+	_focus_out_video();
+};
 
 void OSIPhone::native_video_stop() {
 	if (native_video_is_playing())

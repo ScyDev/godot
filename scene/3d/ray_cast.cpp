@@ -33,7 +33,7 @@
 void RayCast::set_cast_to(const Vector3& p_point) {
 
 	cast_to=p_point;
-	if (is_inside_scene() && get_scene()->is_editor_hint())
+	if (is_inside_tree() && get_tree()->is_editor_hint())
 		update_gizmo();
 
 }
@@ -72,7 +72,7 @@ Vector3 RayCast::get_collision_normal() const{
 void RayCast::set_enabled(bool p_enabled) {
 
 	enabled=p_enabled;
-	if (is_inside_scene() && !get_scene()->is_editor_hint())
+	if (is_inside_tree() && !get_tree()->is_editor_hint())
 		set_fixed_process(p_enabled);
 	if (!p_enabled)
 		collided=false;
@@ -91,35 +91,22 @@ void RayCast::_notification(int p_what) {
 
 	switch(p_what) {
 
-		case NOTIFICATION_ENTER_SCENE: {
+		case NOTIFICATION_ENTER_TREE: {
 
-			if (enabled && !get_scene()->is_editor_hint()) {
+			if (enabled && !get_tree()->is_editor_hint()) {
 				set_fixed_process(true);
-				Node *p = get_parent();
-				while( p && p->cast_to<Spatial>() ) {
-
-					CollisionObject *co = p->cast_to<CollisionObject>();
-					if (co) {
-
-						exception=co->get_rid();
-						exceptions.insert(exception);
-					}
-
-					p=p->get_parent();
-				}
 			} else
 				set_fixed_process(false);
 
 
 
 		} break;
-		case NOTIFICATION_EXIT_SCENE: {
+		case NOTIFICATION_EXIT_TREE: {
 
 			if (enabled) {
 				set_fixed_process(false);
 			}
 
-			exceptions.erase(exception);
 
 		} break;
 		case NOTIFICATION_FIXED_PROCESS: {
@@ -143,7 +130,7 @@ void RayCast::_notification(int p_what) {
 
 			PhysicsDirectSpaceState::RayResult rr;
 
-			if (dss->intersect_ray(gt.get_origin(),gt.xform(to),rr,exceptions)) {
+			if (dss->intersect_ray(gt.get_origin(),gt.xform(to),rr,exclude)) {
 
 				collided=true;
 				against=rr.collider_id;
@@ -160,6 +147,41 @@ void RayCast::_notification(int p_what) {
 	}
 }
 
+void RayCast::add_exception_rid(const RID& p_rid) {
+
+	exclude.insert(p_rid);
+}
+
+void RayCast::add_exception(const Object* p_object){
+
+	ERR_FAIL_NULL(p_object);
+	CollisionObject *co=((Object*)p_object)->cast_to<CollisionObject>();
+	if (!co)
+		return;
+	add_exception_rid(co->get_rid());
+}
+
+void RayCast::remove_exception_rid(const RID& p_rid) {
+
+	exclude.erase(p_rid);
+}
+
+void RayCast::remove_exception(const Object* p_object){
+
+	ERR_FAIL_NULL(p_object);
+	CollisionObject *co=((Object*)p_object)->cast_to<CollisionObject>();
+	if (!co)
+		return;
+	remove_exception_rid(co->get_rid());
+}
+
+
+void RayCast::clear_exceptions(){
+
+	exclude.clear();
+}
+
+
 void RayCast::_bind_methods() {
 
 
@@ -175,6 +197,14 @@ void RayCast::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("get_collider_shape"),&RayCast::get_collider_shape);
 	ObjectTypeDB::bind_method(_MD("get_collision_point"),&RayCast::get_collision_point);
 	ObjectTypeDB::bind_method(_MD("get_collision_normal"),&RayCast::get_collision_normal);
+
+	ObjectTypeDB::bind_method(_MD("add_exception_rid","rid"),&RayCast::add_exception_rid);
+	ObjectTypeDB::bind_method(_MD("add_exception","node"),&RayCast::add_exception);
+
+	ObjectTypeDB::bind_method(_MD("remove_exception_rid","rid"),&RayCast::remove_exception_rid);
+	ObjectTypeDB::bind_method(_MD("remove_exception","node"),&RayCast::remove_exception);
+
+	ObjectTypeDB::bind_method(_MD("clear_exceptions"),&RayCast::clear_exceptions);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL,"enabled"),_SCS("set_enabled"),_SCS("is_enabled"));
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3,"cast_to"),_SCS("set_cast_to"),_SCS("get_cast_to"));

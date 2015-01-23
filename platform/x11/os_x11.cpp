@@ -28,7 +28,6 @@
 /*************************************************************************/
 #include "servers/visual/visual_server_raster.h"
 #include "drivers/gles2/rasterizer_gles2.h"
-#include "drivers/gles1/rasterizer_gles1.h"
 #include "os_x11.h"
 #include "key_mapping_x11.h"
 #include <stdio.h>
@@ -63,15 +62,27 @@
 
 int OS_X11::get_video_driver_count() const {
 
-	return 2;
+	return 1;
 }
 const char * OS_X11::get_video_driver_name(int p_driver) const {
 
-	return p_driver==0?"GLES2":"GLES1";
+	return "GLES2";
 }
 OS::VideoMode OS_X11::get_default_video_mode() const {
 
 	return OS::VideoMode(800,600,false);
+}
+
+int OS_X11::get_audio_driver_count() const {
+
+    return AudioDriverManagerSW::get_driver_count();
+}
+
+const char *OS_X11::get_audio_driver_name(int p_driver) const {
+
+    AudioDriverSW* driver = AudioDriverManagerSW::get_driver(p_driver);
+    ERR_FAIL_COND_V( !driver, "" );
+    return AudioDriverManagerSW::get_driver(p_driver)->get_name();
 }
 
 void OS_X11::initialize(const VideoMode& p_desired,int p_video_driver,int p_audio_driver) {
@@ -154,10 +165,10 @@ void OS_X11::initialize(const VideoMode& p_desired,int p_video_driver,int p_audi
 	context_gl = memnew( ContextGL_X11( x11_display, x11_window,current_videomode, false ) );
 	context_gl->initialize();
 
-	if (p_video_driver == 0) {
+	if (true) {
 		rasterizer = memnew( RasterizerGLES2 );
 	} else {
-		rasterizer = memnew( RasterizerGLES1 );
+		//rasterizer = memnew( RasterizerGLES1 );
 	};
 
 #endif
@@ -1088,7 +1099,73 @@ String OS_X11::get_name() {
 
 Error OS_X11::shell_open(String p_uri) {
 
-	return ERR_UNAVAILABLE;
+	Error ok;
+	List<String> args;
+	args.push_back(p_uri);
+	ok = execute("/usr/bin/xdg-open",args,false);
+	if (ok==OK)
+		return OK;
+	ok = execute("gnome-open",args,false);
+	if (ok==OK)
+		return OK;
+	ok = execute("kde-open",args,false);
+	return ok;
+}
+
+String OS_X11::get_system_dir(SystemDir p_dir) const {
+
+
+	String xdgparam;
+
+	switch(p_dir) {
+		case SYSTEM_DIR_DESKTOP: {
+
+			xdgparam="DESKTOP";
+		} break;
+		case SYSTEM_DIR_DCIM: {
+
+			xdgparam="PICTURES";
+
+		} break;
+		case SYSTEM_DIR_DOCUMENTS: {
+
+			xdgparam="DOCUMENTS";
+
+		} break;
+		case SYSTEM_DIR_DOWNLOADS: {
+
+			xdgparam="DOWNLOAD";
+
+		} break;
+		case SYSTEM_DIR_MOVIES: {
+
+			xdgparam="VIDEOS";
+
+		} break;
+		case SYSTEM_DIR_MUSIC: {
+
+			xdgparam="MUSIC";
+
+		} break;
+		case SYSTEM_DIR_PICTURES: {
+
+			xdgparam="PICTURES";
+
+		} break;
+		case SYSTEM_DIR_RINGTONES: {
+
+			xdgparam="MUSIC";
+
+		} break;
+	}
+
+	String pipe;
+	List<String> arg;
+	arg.push_back(xdgparam);
+	Error err = const_cast<OS_X11*>(this)->execute("/usr/bin/xdg-user-dir",arg,true,NULL,&pipe);
+	if (err!=OK)
+		return ".";
+	return pipe.strip_edges();
 }
 
 
@@ -1378,6 +1455,10 @@ OS_X11::OS_X11() {
 
 #ifdef RTAUDIO_ENABLED
 	AudioDriverManagerSW::add_driver(&driver_rtaudio);
+#endif
+
+#ifdef PULSEAUDIO_ENABLED
+	AudioDriverManagerSW::add_driver(&driver_pulseaudio);
 #endif
 
 #ifdef ALSA_ENABLED

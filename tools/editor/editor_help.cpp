@@ -270,7 +270,7 @@ void EditorHelpSearch::_confirmed() {
 
 void EditorHelpSearch::_notification(int p_what) {
 
-	if (p_what==NOTIFICATION_ENTER_SCENE) {
+	if (p_what==NOTIFICATION_ENTER_TREE) {
 
 		connect("confirmed",this,"_confirmed");
 		_update_search();
@@ -1361,8 +1361,8 @@ EditorHelp::EditorHelp(EditorNode *p_editor) {
 
 	Separator *hs = memnew( VSeparator );
 	panel_hb->add_child(hs);
-	EmptyControl *ec = memnew( EmptyControl );
-	ec->set_minsize(Size2(200,1));
+	Control *ec = memnew( Control );
+	ec->set_custom_minimum_size(Size2(200,1));
 	panel_hb->add_child(ec);
 	search = memnew( LineEdit );
 	ec->add_child(search);

@@ -157,7 +157,7 @@ void ItemListEditor::_add_pressed() {
 
 void ItemListEditor::_notification(int p_notification) {
 
-	if (p_notification==NOTIFICATION_ENTER_SCENE) {
+	if (p_notification==NOTIFICATION_ENTER_TREE) {
 
 		add_button->set_icon(get_icon("Add","EditorIcons"));
 		del_button->set_icon(get_icon("Del","EditorIcons"));
@@ -210,6 +210,7 @@ void ItemListEditor::_bind_methods() {
 }
 
 bool ItemListEditor::handles(Object *p_object) const {
+	return false;
 	for(int i=0;i<item_plugins.size();i++)  {
 		if (item_plugins[i]->handles(p_object)) {
 			return true;

@@ -73,14 +73,25 @@ real_t Area2D::get_gravity() const{
 	return gravity;
 }
 
-void Area2D::set_density(real_t p_density){
+void Area2D::set_linear_damp(real_t p_linear_damp){
 
-	density=p_density;
-	Physics2DServer::get_singleton()->area_set_param(get_rid(),Physics2DServer::AREA_PARAM_DENSITY,p_density);
+	linear_damp=p_linear_damp;
+	Physics2DServer::get_singleton()->area_set_param(get_rid(),Physics2DServer::AREA_PARAM_LINEAR_DAMP,p_linear_damp);
 }
-real_t Area2D::get_density() const{
+real_t Area2D::get_linear_damp() const{
 
-	return density;
+	return linear_damp;
+}
+
+void Area2D::set_angular_damp(real_t p_angular_damp){
+
+	angular_damp=p_angular_damp;
+	Physics2DServer::get_singleton()->area_set_param(get_rid(),Physics2DServer::AREA_PARAM_ANGULAR_DAMP,p_angular_damp);
+}
+
+real_t Area2D::get_angular_damp() const{
+
+	return angular_damp;
 }
 
 void Area2D::set_priority(real_t p_priority){
@@ -94,7 +105,7 @@ real_t Area2D::get_priority() const{
 }
 
 
-void Area2D::_body_enter_scene(ObjectID p_id) {
+void Area2D::_body_enter_tree(ObjectID p_id) {
 
 	Object *obj = ObjectDB::get_instance(p_id);
 	Node *node = obj ? obj->cast_to<Node>() : NULL;
@@ -102,9 +113,9 @@ void Area2D::_body_enter_scene(ObjectID p_id) {
 
 	Map<ObjectID,BodyState>::Element *E=body_map.find(p_id);
 	ERR_FAIL_COND(!E);
-	ERR_FAIL_COND(E->get().in_scene);
+	ERR_FAIL_COND(E->get().in_tree);
 
-	E->get().in_scene=true;
+	E->get().in_tree=true;
 	emit_signal(SceneStringNames::get_singleton()->body_enter,node);
 	for(int i=0;i<E->get().shapes.size();i++) {
 
@@ -113,15 +124,15 @@ void Area2D::_body_enter_scene(ObjectID p_id) {
 
 }
 
-void Area2D::_body_exit_scene(ObjectID p_id) {
+void Area2D::_body_exit_tree(ObjectID p_id) {
 
 	Object *obj = ObjectDB::get_instance(p_id);
 	Node *node = obj ? obj->cast_to<Node>() : NULL;
 	ERR_FAIL_COND(!node);
 	Map<ObjectID,BodyState>::Element *E=body_map.find(p_id);
 	ERR_FAIL_COND(!E);
-	ERR_FAIL_COND(!E->get().in_scene);
-	E->get().in_scene=false;
+	ERR_FAIL_COND(!E->get().in_tree);
+	E->get().in_tree=false;
 	emit_signal(SceneStringNames::get_singleton()->body_exit,node);
 	for(int i=0;i<E->get().shapes.size();i++) {
 
@@ -142,16 +153,18 @@ void Area2D::_body_inout(int p_status,const RID& p_body, int p_instance, int p_b
 
 	ERR_FAIL_COND(!body_in && !E);
 
+	locked=true;
+
 	if (body_in) {
 		if (!E) {
 
 			E = body_map.insert(objid,BodyState());
 			E->get().rc=0;
-			E->get().in_scene=node && node->is_inside_scene();
+			E->get().in_tree=node && node->is_inside_tree();
 			if (node) {
-				node->connect(SceneStringNames::get_singleton()->enter_scene,this,SceneStringNames::get_singleton()->_body_enter_scene,make_binds(objid));
-				node->connect(SceneStringNames::get_singleton()->exit_scene,this,SceneStringNames::get_singleton()->_body_exit_scene,make_binds(objid));
-				if (E->get().in_scene) {
+				node->connect(SceneStringNames::get_singleton()->enter_tree,this,SceneStringNames::get_singleton()->_body_enter_tree,make_binds(objid));
+				node->connect(SceneStringNames::get_singleton()->exit_tree,this,SceneStringNames::get_singleton()->_body_exit_tree,make_binds(objid));
+				if (E->get().in_tree) {
 					emit_signal(SceneStringNames::get_singleton()->body_enter,node);
 				}
 			}
@@ -162,7 +175,7 @@ void Area2D::_body_inout(int p_status,const RID& p_body, int p_instance, int p_b
 			E->get().shapes.insert(ShapePair(p_body_shape,p_area_shape));
 
 
-		if (E->get().in_scene) {
+		if (!node || E->get().in_tree) {
 			emit_signal(SceneStringNames::get_singleton()->body_enter_shape,objid,node,p_body_shape,p_area_shape);
 		}
 
@@ -178,9 +191,9 @@ void Area2D::_body_inout(int p_status,const RID& p_body, int p_instance, int p_b
 		if (E->get().rc==0) {
 
 			if (node) {
-				node->disconnect(SceneStringNames::get_singleton()->enter_scene,this,SceneStringNames::get_singleton()->_body_enter_scene);
-				node->disconnect(SceneStringNames::get_singleton()->exit_scene,this,SceneStringNames::get_singleton()->_body_exit_scene);
-				if (E->get().in_scene)
+				node->disconnect(SceneStringNames::get_singleton()->enter_tree,this,SceneStringNames::get_singleton()->_body_enter_tree);
+				node->disconnect(SceneStringNames::get_singleton()->exit_tree,this,SceneStringNames::get_singleton()->_body_exit_tree);
+				if (E->get().in_tree)
 					emit_signal(SceneStringNames::get_singleton()->body_exit,obj);
 
 			}
@@ -188,7 +201,7 @@ void Area2D::_body_inout(int p_status,const RID& p_body, int p_instance, int p_b
 			eraseit=true;
 
 		}
-		if (node && E->get().in_scene) {
+		if (!node || E->get().in_tree) {
 			emit_signal(SceneStringNames::get_singleton()->body_exit_shape,objid,obj,p_body_shape,p_area_shape);
 		}
 
@@ -197,11 +210,18 @@ void Area2D::_body_inout(int p_status,const RID& p_body, int p_instance, int p_b
 
 	}
 
+	locked=false;
+
+
 }
 
 
 void Area2D::_clear_monitoring() {
 
+	if (locked) {
+		ERR_EXPLAIN("This function can't be used during the in/out signal.");
+	}
+	ERR_FAIL_COND(locked);
 
 	Map<ObjectID,BodyState> bmcopy = body_map;
 	body_map.clear();
@@ -212,7 +232,7 @@ void Area2D::_clear_monitoring() {
 		Object *obj = ObjectDB::get_instance(E->key());
 		Node *node = obj ? obj->cast_to<Node>() : NULL;
 		ERR_CONTINUE(!node);
-		if (!E->get().in_scene)
+		if (!E->get().in_tree)
 			continue;
 
 		for(int i=0;i<E->get().shapes.size();i++) {
@@ -222,8 +242,8 @@ void Area2D::_clear_monitoring() {
 
 		emit_signal(SceneStringNames::get_singleton()->body_exit,obj);
 
-		node->disconnect(SceneStringNames::get_singleton()->enter_scene,this,SceneStringNames::get_singleton()->_body_enter_scene);
-		node->disconnect(SceneStringNames::get_singleton()->exit_scene,this,SceneStringNames::get_singleton()->_body_exit_scene);
+		node->disconnect(SceneStringNames::get_singleton()->enter_tree,this,SceneStringNames::get_singleton()->_body_enter_tree);
+		node->disconnect(SceneStringNames::get_singleton()->exit_tree,this,SceneStringNames::get_singleton()->_body_exit_tree);
 	}
 
 }
@@ -232,7 +252,7 @@ void Area2D::_notification(int p_what) {
 
 	switch(p_what) {
 
-		case NOTIFICATION_EXIT_SCENE: {
+		case NOTIFICATION_EXIT_TREE: {
 
 			_clear_monitoring();
 		} break;
@@ -242,6 +262,11 @@ void Area2D::_notification(int p_what) {
 
 
 void Area2D::set_enable_monitoring(bool p_enable) {
+
+	if (locked) {
+		ERR_EXPLAIN("This function can't be used during the in/out signal.");
+	}
+	ERR_FAIL_COND(locked);
 
 	if (p_enable==monitoring)
 		return;
@@ -263,11 +288,30 @@ bool Area2D::is_monitoring_enabled() const {
 	return monitoring;
 }
 
+Array Area2D::get_overlapping_bodies() const {
+
+	ERR_FAIL_COND_V(!monitoring,Array());
+	Array ret;
+	ret.resize(body_map.size());
+	int idx=0;
+	for (const Map<ObjectID,BodyState>::Element *E=body_map.front();E;E=E->next()) {
+		Object *obj = ObjectDB::get_instance(E->key());
+		if (!obj) {
+			ret.resize( ret.size() -1 ); //ops
+		} else {
+			ret[idx++]=obj;
+		}
+
+	}
+
+	return ret;
+}
+
 
 void Area2D::_bind_methods() {
 
-	ObjectTypeDB::bind_method(_MD("_body_enter_scene","id"),&Area2D::_body_enter_scene);
-	ObjectTypeDB::bind_method(_MD("_body_exit_scene","id"),&Area2D::_body_exit_scene);
+	ObjectTypeDB::bind_method(_MD("_body_enter_tree","id"),&Area2D::_body_enter_tree);
+	ObjectTypeDB::bind_method(_MD("_body_exit_tree","id"),&Area2D::_body_exit_tree);
 
 	ObjectTypeDB::bind_method(_MD("set_space_override_mode","enable"),&Area2D::set_space_override_mode);
 	ObjectTypeDB::bind_method(_MD("get_space_override_mode"),&Area2D::get_space_override_mode);
@@ -281,14 +325,19 @@ void Area2D::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("set_gravity","gravity"),&Area2D::set_gravity);
 	ObjectTypeDB::bind_method(_MD("get_gravity"),&Area2D::get_gravity);
 
-	ObjectTypeDB::bind_method(_MD("set_density","density"),&Area2D::set_density);
-	ObjectTypeDB::bind_method(_MD("get_density"),&Area2D::get_density);
+	ObjectTypeDB::bind_method(_MD("set_linear_damp","linear_damp"),&Area2D::set_linear_damp);
+	ObjectTypeDB::bind_method(_MD("get_linear_damp"),&Area2D::get_linear_damp);
+
+	ObjectTypeDB::bind_method(_MD("set_angular_damp","angular_damp"),&Area2D::set_angular_damp);
+	ObjectTypeDB::bind_method(_MD("get_angular_damp"),&Area2D::get_angular_damp);
 
 	ObjectTypeDB::bind_method(_MD("set_priority","priority"),&Area2D::set_priority);
 	ObjectTypeDB::bind_method(_MD("get_priority"),&Area2D::get_priority);
 
 	ObjectTypeDB::bind_method(_MD("set_enable_monitoring","enable"),&Area2D::set_enable_monitoring);
 	ObjectTypeDB::bind_method(_MD("is_monitoring_enabled"),&Area2D::is_monitoring_enabled);
+
+	ObjectTypeDB::bind_method(_MD("get_overlapping_bodies"),&Area2D::get_overlapping_bodies);
 
 	ObjectTypeDB::bind_method(_MD("_body_inout"),&Area2D::_body_inout);
 
@@ -302,7 +351,8 @@ void Area2D::_bind_methods() {
 	ADD_PROPERTY( PropertyInfo(Variant::BOOL,"gravity_point"),_SCS("set_gravity_is_point"),_SCS("is_gravity_a_point"));
 	ADD_PROPERTY( PropertyInfo(Variant::VECTOR2,"gravity_vec"),_SCS("set_gravity_vector"),_SCS("get_gravity_vector"));
 	ADD_PROPERTY( PropertyInfo(Variant::REAL,"gravity",PROPERTY_HINT_RANGE,"-1024,1024,0.01"),_SCS("set_gravity"),_SCS("get_gravity"));
-	ADD_PROPERTY( PropertyInfo(Variant::REAL,"density",PROPERTY_HINT_RANGE,"0,1024,0.001"),_SCS("set_density"),_SCS("get_density"));
+	ADD_PROPERTY( PropertyInfo(Variant::REAL,"linear_damp",PROPERTY_HINT_RANGE,"0,1024,0.001"),_SCS("set_linear_damp"),_SCS("get_linear_damp"));
+	ADD_PROPERTY( PropertyInfo(Variant::REAL,"angular_damp",PROPERTY_HINT_RANGE,"0,1024,0.001"),_SCS("set_angular_damp"),_SCS("get_angular_damp"));
 	ADD_PROPERTYNZ( PropertyInfo(Variant::INT,"priority",PROPERTY_HINT_RANGE,"0,128,1"),_SCS("set_priority"),_SCS("get_priority"));
 	ADD_PROPERTY( PropertyInfo(Variant::BOOL,"monitoring"),_SCS("set_enable_monitoring"),_SCS("is_monitoring_enabled"));
 
@@ -314,7 +364,9 @@ Area2D::Area2D() : CollisionObject2D(Physics2DServer::get_singleton()->area_crea
 	set_gravity(98);;
 	set_gravity_vector(Vector2(0,1));
 	gravity_is_point=false;
-	density=0.1;
+	linear_damp=0.1;
+	angular_damp=1;
+	locked=false;
 	priority=0;
 	monitoring=false;
 	set_enable_monitoring(true);

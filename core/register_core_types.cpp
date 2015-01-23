@@ -29,6 +29,7 @@
 #include "register_core_types.h"
 
 #include "io/tcp_server.h"
+#include "io/packet_peer_udp.h"
 #include "io/config_file.h"
 #include "os/main_loop.h"
 #include "io/packet_peer.h"
@@ -109,12 +110,14 @@ void register_core_types() {
 
 
 	ObjectTypeDB::register_type<Reference>();
+	ObjectTypeDB::register_type<WeakRef>();
 	ObjectTypeDB::register_type<ResourceImportMetadata>();
 	ObjectTypeDB::register_type<Resource>();
 	ObjectTypeDB::register_type<FuncRef>();
 	ObjectTypeDB::register_virtual_type<StreamPeer>();
 	ObjectTypeDB::register_create_type<StreamPeerTCP>();
 	ObjectTypeDB::register_create_type<TCP_Server>();
+	ObjectTypeDB::register_create_type<PacketPeerUDP>();
 	ObjectTypeDB::register_create_type<StreamPeerSSL>();
 	ObjectTypeDB::register_virtual_type<IP>();
 	ObjectTypeDB::register_virtual_type<PacketPeer>();

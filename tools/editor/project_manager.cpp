@@ -39,7 +39,7 @@
 #include "scene/gui/line_edit.h"
 #include "scene/gui/panel_container.h"
 
-#include "scene/gui/empty_control.h"
+
 #include "scene/gui/texture_frame.h"
 #include "scene/gui/margin_container.h"
 #include "io/resource_saver.h"
@@ -65,7 +65,7 @@ class NewProjectDialog : public ConfirmationDialog {
 		error->set_text("");
 		get_ok()->set_disabled(true);
 		DirAccess *d = DirAccess::create(DirAccess::ACCESS_FILESYSTEM);
-		if (d->change_dir(project_path->get_text())!=OK) {
+		if (project_path->get_text() != "" && d->change_dir(project_path->get_text())!=OK) {
 			error->set_text("Invalid Path for Project, Path Must Exist!");
 			memdelete(d);
 			return false;
@@ -82,7 +82,7 @@ class NewProjectDialog : public ConfirmationDialog {
 
 		} else {
 
-			if (!d->file_exists("engine.cfg")) {
+			if (project_path->get_text() != "" && !d->file_exists("engine.cfg")) {
 
 				error->set_text("Invalid Project Path (engine.cfg must exist).");
 				memdelete(d);
@@ -321,6 +321,7 @@ public:
 		fdialog = memnew( FileDialog );
 		add_child(fdialog);
 		fdialog->set_access(FileDialog::ACCESS_FILESYSTEM);
+		fdialog->set_current_dir( EditorSettings::get_singleton()->get("global/default_project_path") );
 		project_name->connect("text_changed", this,"_text_changed");
 		project_path->connect("text_changed", this,"_path_text_changed");
 		fdialog->connect("dir_selected", this,"_path_selected");
@@ -579,8 +580,8 @@ void ProjectManager::_load_recent_projects() {
 
 		VBoxContainer *vb = memnew(VBoxContainer);
 		hb->add_child(vb);
-		EmptyControl *ec = memnew( EmptyControl );
-		ec->set_minsize(Size2(0,1));
+		Control *ec = memnew( Control );
+		ec->set_custom_minimum_size(Size2(0,1));
 		vb->add_child(ec);
 		Label *title = memnew( Label(project_name) );
 		title->add_font_override("font",get_font("large","Fonts"));
@@ -627,7 +628,7 @@ void ProjectManager::_open_project_confirm() {
 		ERR_FAIL_COND(err);
 	}
 
-	get_scene()->quit();
+	get_tree()->quit();
 }
 
 void ProjectManager::_open_project() {
@@ -785,7 +786,7 @@ void ProjectManager::_erase_project()  {
 
 void ProjectManager::_exit_dialog()  {
 
-	get_scene()->quit();
+	get_tree()->quit();
 }
 
 void ProjectManager::_bind_methods() {
@@ -973,6 +974,11 @@ ProjectManager::ProjectManager() {
 
 	npdialog->connect("project_created", this,"_load_recent_projects");
 	_load_recent_projects();
+
+	if ( EditorSettings::get_singleton()->get("global/autoscan_project_path") ) {
+		_scan_begin( EditorSettings::get_singleton()->get("global/autoscan_project_path") );
+	}
+
 	//get_ok()->set_text("Open");
 	//get_ok()->set_text("Exit");
 
@@ -1027,7 +1033,7 @@ void ProjectListFilter::_filter_option_selected(int p_idx) {
 
 void ProjectListFilter::_notification(int p_what) {
 	switch(p_what) {
-		case NOTIFICATION_ENTER_SCENE: {
+		case NOTIFICATION_ENTER_TREE: {
 			clear_search_button->set_icon(get_icon("CloseHover","EditorIcons"));
 		} break;
 	}

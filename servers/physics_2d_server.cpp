@@ -39,18 +39,22 @@ void Physics2DDirectBodyState::integrate_forces() {
 
 	real_t av = get_angular_velocity();
 
-	float damp = 1.0 - step * get_total_density();
+	float damp = 1.0 - step * get_total_linear_damp();
 
 	if (damp<0) // reached zero in the given time
 		damp=0;
 
 	lv*=damp;
+
+	damp = 1.0 - step * get_total_angular_damp();
+
+	if (damp<0) // reached zero in the given time
+		damp=0;
+
 	av*=damp;
 
 	set_linear_velocity(lv);
 	set_angular_velocity(av);
-
-
 
 
 }
@@ -70,7 +74,8 @@ Physics2DServer * Physics2DServer::get_singleton() {
 void Physics2DDirectBodyState::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("get_total_gravity"),&Physics2DDirectBodyState::get_total_gravity);
-	ObjectTypeDB::bind_method(_MD("get_total_density"),&Physics2DDirectBodyState::get_total_density);
+	ObjectTypeDB::bind_method(_MD("get_total_linear_damp"),&Physics2DDirectBodyState::get_total_linear_damp);
+	ObjectTypeDB::bind_method(_MD("get_total_angular_damp"),&Physics2DDirectBodyState::get_total_angular_damp);
 
 	ObjectTypeDB::bind_method(_MD("get_inverse_mass"),&Physics2DDirectBodyState::get_inverse_mass);
 	ObjectTypeDB::bind_method(_MD("get_inverse_inertia"),&Physics2DDirectBodyState::get_inverse_inertia);
@@ -495,6 +500,13 @@ void Physics2DServer::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("body_set_max_contacts_reported","body","amount"),&Physics2DServer::body_set_max_contacts_reported);
 	ObjectTypeDB::bind_method(_MD("body_get_max_contacts_reported","body"),&Physics2DServer::body_get_max_contacts_reported);
 
+	ObjectTypeDB::bind_method(_MD("body_set_one_way_collision_direction","normal"),&Physics2DServer::body_set_one_way_collision_direction);
+	ObjectTypeDB::bind_method(_MD("body_get_one_way_collision_direction"),&Physics2DServer::body_get_one_way_collision_direction);
+
+	ObjectTypeDB::bind_method(_MD("body_set_one_way_collision_max_depth","normal"),&Physics2DServer::body_set_one_way_collision_max_depth);
+	ObjectTypeDB::bind_method(_MD("body_get_one_way_collision_max_depth"),&Physics2DServer::body_get_one_way_collision_max_depth);
+
+
 	ObjectTypeDB::bind_method(_MD("body_set_omit_force_integration","body","enable"),&Physics2DServer::body_set_omit_force_integration);
 	ObjectTypeDB::bind_method(_MD("body_is_omitting_force_integration","body"),&Physics2DServer::body_is_omitting_force_integration);
 
@@ -514,7 +526,7 @@ void Physics2DServer::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("joint_get_type","joint"),&Physics2DServer::joint_get_type);
 
-	ObjectTypeDB::bind_method(_MD("free","rid"),&Physics2DServer::free);
+	ObjectTypeDB::bind_method(_MD("free_rid","rid"),&Physics2DServer::free);
 
 	ObjectTypeDB::bind_method(_MD("set_active","active"),&Physics2DServer::set_active);
 
@@ -538,7 +550,8 @@ void Physics2DServer::_bind_methods() {
 	BIND_CONSTANT( AREA_PARAM_GRAVITY_VECTOR );
 	BIND_CONSTANT( AREA_PARAM_GRAVITY_IS_POINT );
 	BIND_CONSTANT( AREA_PARAM_GRAVITY_POINT_ATTENUATION );
-	BIND_CONSTANT( AREA_PARAM_DENSITY );
+	BIND_CONSTANT( AREA_PARAM_LINEAR_DAMP);
+	BIND_CONSTANT( AREA_PARAM_ANGULAR_DAMP);
 	BIND_CONSTANT( AREA_PARAM_PRIORITY );
 
 	BIND_CONSTANT( AREA_SPACE_OVERRIDE_COMBINE );
@@ -553,6 +566,9 @@ void Physics2DServer::_bind_methods() {
 	BIND_CONSTANT( BODY_PARAM_BOUNCE );
 	BIND_CONSTANT( BODY_PARAM_FRICTION );
 	BIND_CONSTANT( BODY_PARAM_MASS );
+	BIND_CONSTANT( BODY_PARAM_GRAVITY_SCALE );
+	BIND_CONSTANT( BODY_PARAM_LINEAR_DAMP);
+	BIND_CONSTANT( BODY_PARAM_ANGULAR_DAMP);
 	BIND_CONSTANT( BODY_PARAM_MAX );
 
 	BIND_CONSTANT( BODY_STATE_TRANSFORM );

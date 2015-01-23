@@ -49,14 +49,16 @@ private:
 	Vector2 gravity_vec;
 	real_t gravity;
 	bool gravity_is_point;
-	real_t density;
+	real_t linear_damp;
+	real_t angular_damp;
 	int priority;
 	bool monitoring;
+	bool locked;
 
 	void _body_inout(int p_status,const RID& p_body, int p_instance, int p_body_shape,int p_area_shape);
 
-	void _body_enter_scene(ObjectID p_id);
-	void _body_exit_scene(ObjectID p_id);
+	void _body_enter_tree(ObjectID p_id);
+	void _body_exit_tree(ObjectID p_id);
 
 	struct ShapePair {
 
@@ -76,7 +78,7 @@ private:
 	struct BodyState {
 
 		int rc;
-		bool in_scene;
+		bool in_tree;
 		VSet<ShapePair> shapes;
 	};
 
@@ -103,14 +105,19 @@ public:
 	void set_gravity(real_t p_gravity);
 	real_t get_gravity() const;
 
-	void set_density(real_t p_density);
-	real_t get_density() const;
+	void set_linear_damp(real_t p_linear_damp);
+	real_t get_linear_damp() const;
+
+	void set_angular_damp(real_t p_angular_damp);
+	real_t get_angular_damp() const;
 
 	void set_priority(real_t p_priority);
 	real_t get_priority() const;
 
 	void set_enable_monitoring(bool p_enable);
 	bool is_monitoring_enabled() const;
+
+	Array get_overlapping_bodies() const; //function for script
 
 
 	Area2D();

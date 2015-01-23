@@ -12,9 +12,9 @@ Ref<ResourceInteractiveLoader> _ResourceLoader::load_interactive(const String& p
 	return ResourceLoader::load_interactive(p_path,p_type_hint);
 }
 
-RES _ResourceLoader::load(const String &p_path,const String& p_type_hint) {
+RES _ResourceLoader::load(const String &p_path,const String& p_type_hint, bool p_no_cache) {
 
-	RES ret =  ResourceLoader::load(p_path,p_type_hint);
+	RES ret =  ResourceLoader::load(p_path,p_type_hint, p_no_cache);
 	return ret;
 }
 
@@ -59,7 +59,7 @@ void _ResourceLoader::_bind_methods() {
 
 
 	ObjectTypeDB::bind_method(_MD("load_interactive:ResourceInteractiveLoader","path","type_hint"),&_ResourceLoader::load_interactive,DEFVAL(""));
-	ObjectTypeDB::bind_method(_MD("load:Resource","path","type_hint"),&_ResourceLoader::load,DEFVAL(""));
+	ObjectTypeDB::bind_method(_MD("load:Resource","path","type_hint", "p_no_cache"),&_ResourceLoader::load,DEFVAL(""), DEFVAL(false));
 	ObjectTypeDB::bind_method(_MD("get_recognized_extensions_for_type","type"),&_ResourceLoader::get_recognized_extensions_for_type);
 	ObjectTypeDB::bind_method(_MD("set_abort_on_missing_resources","abort"),&_ResourceLoader::set_abort_on_missing_resources);
 	ObjectTypeDB::bind_method(_MD("get_dependencies"),&_ResourceLoader::get_dependencies);
@@ -577,9 +577,9 @@ float _OS::get_frames_per_second() const {
 	return OS::get_singleton()->get_frames_per_second();
 }
 
-Error _OS::native_video_play(String p_path, float p_volume) {
+Error _OS::native_video_play(String p_path, float p_volume, String p_audio_track, String p_subtitle_track) {
 
-	return OS::get_singleton()->native_video_play(p_path, p_volume);
+	return OS::get_singleton()->native_video_play(p_path, p_volume, p_audio_track, p_subtitle_track);
 };
 
 bool _OS::native_video_is_playing() {
@@ -597,6 +597,20 @@ void _OS::native_video_stop() {
 	OS::get_singleton()->native_video_stop();
 };
 
+bool _OS::is_debug_build() const {
+
+#ifdef DEBUG_ENABLED
+	return true;
+#else
+	return false;
+#endif
+
+}
+
+String _OS::get_system_dir(SystemDir p_dir) const {
+
+	return OS::get_singleton()->get_system_dir(OS::SystemDir(p_dir));
+}
 
 String _OS::get_custom_level() const {
 
@@ -628,7 +642,7 @@ void _OS::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("has_touchscreen_ui_hint"),&_OS::has_touchscreen_ui_hint);
 
-
+	ObjectTypeDB::bind_method(_MD("set_window_title","title"),&_OS::set_window_title);
 
 	ObjectTypeDB::bind_method(_MD("set_low_processor_usage_mode","enable"),&_OS::set_low_processor_usage_mode);
 	ObjectTypeDB::bind_method(_MD("is_in_low_processor_usage_mode"),&_OS::is_in_low_processor_usage_mode);
@@ -668,6 +682,8 @@ void _OS::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("can_use_threads"),&_OS::can_use_threads);
 
+	ObjectTypeDB::bind_method(_MD("is_debug_build"),&_OS::is_debug_build);
+
 	//ObjectTypeDB::bind_method(_MD("get_mouse_button_state"),&_OS::get_mouse_button_state);
 
 	ObjectTypeDB::bind_method(_MD("dump_memory_to_file","file"),&_OS::dump_memory_to_file);
@@ -680,6 +696,7 @@ void _OS::_bind_methods() {
 	ObjectTypeDB::bind_method(_MD("get_dynamic_memory_usage"),&_OS::get_dynamic_memory_usage);
 
 	ObjectTypeDB::bind_method(_MD("get_data_dir"),&_OS::get_data_dir);
+	ObjectTypeDB::bind_method(_MD("get_system_dir","dir"),&_OS::get_system_dir);
 	ObjectTypeDB::bind_method(_MD("get_unique_ID"),&_OS::get_unique_ID);
 
 	ObjectTypeDB::bind_method(_MD("get_frames_per_second"),&_OS::get_frames_per_second);
@@ -718,6 +735,14 @@ void _OS::_bind_methods() {
 	BIND_CONSTANT( MONTH_NOVEMBER );
 	BIND_CONSTANT( MONTH_DECEMBER );
 
+	BIND_CONSTANT( SYSTEM_DIR_DESKTOP);
+	BIND_CONSTANT( SYSTEM_DIR_DCIM );
+	BIND_CONSTANT( SYSTEM_DIR_DOCUMENTS );
+	BIND_CONSTANT( SYSTEM_DIR_DOWNLOADS );
+	BIND_CONSTANT( SYSTEM_DIR_MOVIES );
+	BIND_CONSTANT( SYSTEM_DIR_MUSIC );
+	BIND_CONSTANT( SYSTEM_DIR_PICTURES );
+	BIND_CONSTANT( SYSTEM_DIR_RINGTONES );
 
 }
 
@@ -1096,6 +1121,7 @@ String _File::get_as_text() const {
 		text+=l+"\n";
 		l = get_line();
 	}
+	text+=l;
 
 	return text;
 

@@ -83,7 +83,8 @@ bool AnimationTreePlayer::_set(const StringName& p_name, const Variant& p_value)
 
 		ERR_FAIL_COND_V(nt==NODE_MAX,false);
 
-		add_node(nt,id);
+		if (nt!=NODE_OUTPUT)
+			add_node(nt,id);
 		node_set_pos(id,pos);
 
 
@@ -1586,7 +1587,7 @@ void AnimationTreePlayer::_update_sources() {
 
 	if (master==NodePath())
 		return;
-	if (!is_inside_scene())
+	if (!is_inside_tree())
 		return;
 
 	Node *m = get_node(master);
@@ -1662,7 +1663,7 @@ void AnimationTreePlayer::_bind_methods() {
 
 	ObjectTypeDB::bind_method(_MD("node_get_type","id"),&AnimationTreePlayer::node_get_type);
 	ObjectTypeDB::bind_method(_MD("node_get_input_count","id"),&AnimationTreePlayer::node_get_input_count);
-	ObjectTypeDB::bind_method(_MD("node_get_input_sourcre","id","idx"),&AnimationTreePlayer::node_get_input_source);
+	ObjectTypeDB::bind_method(_MD("node_get_input_source","id","idx"),&AnimationTreePlayer::node_get_input_source);
 
 	ObjectTypeDB::bind_method(_MD("animation_node_set_animation","id","animation:Animation"),&AnimationTreePlayer::animation_node_set_animation);
 	ObjectTypeDB::bind_method(_MD("animation_node_get_animation:Animation","id"),&AnimationTreePlayer::animation_node_get_animation);

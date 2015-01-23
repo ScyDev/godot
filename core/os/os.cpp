@@ -280,6 +280,12 @@ String OS::get_resource_dir() const {
 	return Globals::get_singleton()->get_resource_path();
 }
 
+
+String OS::get_system_dir(SystemDir p_dir) const {
+
+	return ".";
+}
+
 String OS::get_data_dir() const {
 
 	return ".";
@@ -438,7 +444,7 @@ int OS::get_processor_count() const {
 	return 1;
 }
 
-Error OS::native_video_play(String p_path, float p_volume) {
+Error OS::native_video_play(String p_path, float p_volume, String p_audio_track, String p_subtitle_track) {
 
 	return FAILED;
 };
@@ -477,6 +483,11 @@ OS::MouseMode OS::get_mouse_mode() const{
 void OS::set_time_scale(float p_scale) {
 
 	_time_scale=p_scale;
+}
+
+OS::LatinKeyboardVariant OS::get_latin_keyboard_variant() const {
+
+	return LATIN_KEYBOARD_QWERTY;
 }
 
 float OS::get_time_scale() const {

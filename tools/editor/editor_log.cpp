@@ -76,7 +76,7 @@ void EditorLog::_error_handler(void *p_self, const char*p_func, const char*p_fil
 
 void EditorLog::_notification(int p_what) {
 
-	if (p_what==NOTIFICATION_ENTER_SCENE) {
+	if (p_what==NOTIFICATION_ENTER_TREE) {
 
 		log->add_color_override("default_color",get_color("font_color","Tree"));
 		tb->set_normal_texture( get_icon("Collapse","EditorIcons"));
@@ -203,9 +203,9 @@ EditorLog::EditorLog() {
 	tb->connect("pressed",this,"_close_request");
 
 
-	ec = memnew( EmptyControl);
+	ec = memnew( Control);
 	vb->add_child(ec);
-	ec->set_minsize(Size2(0,100));
+	ec->set_custom_minimum_size(Size2(0,100));
 	ec->set_v_size_flags(SIZE_EXPAND_FILL);
 
 

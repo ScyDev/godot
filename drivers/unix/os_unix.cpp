@@ -42,6 +42,7 @@
 #include "dir_access_unix.h"
 #include "tcp_server_posix.h"
 #include "stream_peer_tcp_posix.h"
+#include "packet_peer_udp_posix.h"
 
 
 #include <stdarg.h>
@@ -115,6 +116,7 @@ void OS_Unix::initialize_core() {
 #ifndef NO_NETWORK
 	TCPServerPosix::make_default();
 	StreamPeerTCPPosix::make_default();
+	PacketPeerUDPPosix::make_default();
 	IP_Unix::make_default();
 #endif
 	mempool_static = new MemoryPoolStaticMalloc;
@@ -330,6 +332,12 @@ Error OS_Unix::execute(const String& p_path, const List<String>& p_arguments,boo
 Error OS_Unix::kill(const ProcessID& p_pid) {
 
 	int ret = ::kill(p_pid,SIGKILL);
+	if (!ret) {
+		//avoid zombie process
+		int st;
+		::waitpid(p_pid,&st,0);
+
+	}
 	return ret?ERR_INVALID_PARAMETER:OK;
 }
 

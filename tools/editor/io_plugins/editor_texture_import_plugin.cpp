@@ -151,7 +151,7 @@ void EditorImportTextureOptions::_bind_methods() {
 
 void EditorImportTextureOptions::_notification(int p_what) {
 
-	if (p_what==NOTIFICATION_ENTER_SCENE) {
+	if (p_what==NOTIFICATION_ENTER_TREE) {
 
 		flags->connect("item_edited",this,"_changed");
 		format->connect("item_selected",this,"_changedp");
@@ -411,7 +411,11 @@ void EditorTextureImportDialog::popup_import(const String& p_from) {
 		Ref<ResourceImportMetadata> rimd = ResourceLoader::load_import_metadata(p_from);
 		ERR_FAIL_COND(!rimd.is_valid());
 
-		save_path->set_text(p_from.get_base_dir());
+		if (plugin->get_mode()==EditorTextureImportPlugin::MODE_ATLAS)
+			save_path->set_text(p_from);
+		else
+			save_path->set_text(p_from.get_base_dir());
+
 		texture_options->set_format(EditorTextureImportPlugin::ImageFormat(int(rimd->get_option("format"))));
 		texture_options->set_flags(rimd->get_option("flags"));
 		texture_options->set_quality(rimd->get_option("quality"));
@@ -429,7 +433,7 @@ void EditorTextureImportDialog::popup_import(const String& p_from) {
 void EditorTextureImportDialog::_notification(int p_what) {
 
 
-	if (p_what==NOTIFICATION_ENTER_SCENE) {
+	if (p_what==NOTIFICATION_ENTER_TREE) {
 
 
 		List<String> extensions;

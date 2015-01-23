@@ -51,6 +51,8 @@ TheoraVideoClip::TheoraVideoClip(TheoraDataSource* data_source,
 	mWaitingForCache(false),
 	mOutputMode(TH_UNDEFINED)
 {
+
+	audio_track=0;
 	mAudioMutex = NULL;
 	mThreadAccessMutex = new TheoraMutex();
 	mTimer = mDefaultTimer = new TheoraTimer();
@@ -75,7 +77,7 @@ TheoraVideoClip::~TheoraVideoClip()
 	if (mAudioInterface)
 	{
 		mAudioMutex->lock(); // ensure a thread isn't using this mutex
-		memdelete(mAudioInterface); // notify audio interface it's time to call it a day
+		delete mAudioInterface; // notify audio interface it's time to call it a day
 		mAudioMutex ->unlock();
 		delete mAudioMutex;
 	}
@@ -247,6 +249,7 @@ int TheoraVideoClip::discardOutdatedFrames(float absTime)
     
 	if (nPop > 0)
     {
+#define _DEBUG
 #ifdef _DEBUG
         std::string log = getName() + ": dropped frame ";
     

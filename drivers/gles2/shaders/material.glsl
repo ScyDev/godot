@@ -779,6 +779,7 @@ uniform highp mat4 camera_inverse_transform;
 #if defined(ENABLE_TEXSCREEN)
 
 uniform vec2 texscreen_screen_mult;
+uniform vec4 texscreen_screen_clamp;
 uniform sampler2D texscreen_tex;
 
 #endif
@@ -1214,7 +1215,7 @@ LIGHT_SHADER_CODE
 # if !defined(LIGHT_TYPE_DIRECTIONAL) && !defined(LIGHT_TYPE_OMNI) && !defined (LIGHT_TYPE_SPOT)
 //none
 #ifndef SHADELESS
-	diffuse.rgb=vec3(0.0,0.0,0.0);
+	diffuse.rgb=ambient_light *diffuse.rgb;
 #endif
 
 # endif
@@ -1230,7 +1231,7 @@ LIGHT_SHADER_CODE
 
 	vec3 ambient = const_light_mult*ambient_light*diffuse.rgb;
 # if defined(LIGHT_TYPE_OMNI) || defined (LIGHT_TYPE_SPOT)
-	ambient*=diffuse_interp.a; //attenuation affects ambient too
+//	ambient*=diffuse_interp.a; //attenuation affects ambient too
 
 # endif
 

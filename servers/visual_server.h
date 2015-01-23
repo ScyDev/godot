@@ -86,6 +86,9 @@ public:
 		ARRAY_WEIGHTS_SIZE=4,
 		MAX_PARTICLE_COLOR_PHASES=4,
 		MAX_PARTICLE_ATTRACTORS=4,
+		CANVAS_ITEM_Z_MIN=-4096,
+		CANVAS_ITEM_Z_MAX=4096,
+
 
 
 		MAX_CURSORS = 8,
@@ -140,6 +143,7 @@ public:
 		SHADER_POST_PROCESS,
 	};
 
+
 	virtual RID shader_create(ShaderMode p_mode=SHADER_MATERIAL)=0;
 
 	virtual void shader_set_mode(RID p_shader,ShaderMode p_mode)=0;
@@ -150,6 +154,9 @@ public:
 	virtual String shader_get_vertex_code(RID p_shader) const=0;
 	virtual String shader_get_light_code(RID p_shader) const=0;
 	virtual void shader_get_param_list(RID p_shader, List<PropertyInfo> *p_param_list) const=0;
+
+	virtual void shader_set_default_texture_param(RID p_shader, const StringName& p_name, RID p_texture)=0;
+	virtual RID shader_get_default_texture_param(RID p_shader, const StringName& p_name) const=0;
 
 
 	/* COMMON MATERIAL API */
@@ -978,9 +985,52 @@ public:
 	virtual void canvas_item_add_set_blend_mode(RID p_item, MaterialBlendMode p_blend)=0;
 	virtual void canvas_item_add_clip_ignore(RID p_item, bool p_ignore)=0;
 	virtual void canvas_item_set_sort_children_by_y(RID p_item, bool p_enable)=0;
+	virtual void canvas_item_set_z(RID p_item, int p_z)=0;
+	virtual void canvas_item_set_z_as_relative_to_parent(RID p_item, bool p_enable)=0;
 
 	virtual void canvas_item_clear(RID p_item)=0;
 	virtual void canvas_item_raise(RID p_item)=0;
+
+	virtual void canvas_item_set_shader(RID p_item, RID p_shader)=0;
+	virtual RID canvas_item_get_shader(RID p_item) const=0;
+
+	virtual void canvas_item_set_use_parent_shader(RID p_item, bool p_enable)=0;
+
+	virtual void canvas_item_set_shader_param(RID p_canvas_item, const StringName& p_param, const Variant& p_value)=0;
+	virtual Variant canvas_item_get_shader_param(RID p_canvas_item, const StringName& p_param) const=0;
+
+	virtual RID canvas_light_create()=0;
+	virtual void canvas_light_attach_to_canvas(RID p_light,RID p_canvas)=0;
+	virtual void canvas_light_set_enabled(RID p_light, bool p_enabled)=0;
+	virtual void canvas_light_set_transform(RID p_light, const Matrix32& p_transform)=0;
+	virtual void canvas_light_set_texture(RID p_light, RID p_texture)=0;
+	virtual void canvas_light_set_texture_offset(RID p_light, const Vector2& p_offset)=0;
+	virtual void canvas_light_set_color(RID p_light, const Color& p_color)=0;
+	virtual void canvas_light_set_height(RID p_light, float p_height)=0;
+	virtual void canvas_light_set_z_range(RID p_light, int p_min_z,int p_max_z)=0;
+	virtual void canvas_light_set_item_mask(RID p_light, int p_mask)=0;
+
+	enum CanvasLightBlendMode {
+		CANVAS_LIGHT_BLEND_ADD,
+		CANVAS_LIGHT_BLEND_SUB,
+		CANVAS_LIGHT_BLEND_MULTIPLY,
+		CANVAS_LIGHT_BLEND_DODGE,
+		CANVAS_LIGHT_BLEND_BURN,
+		CANVAS_LIGHT_BLEND_LIGHTEN,
+		CANVAS_LIGHT_BLEND_DARKEN,
+		CANVAS_LIGHT_BLEND_OVERLAY,
+		CANVAS_LIGHT_BLEND_SCREEN,
+	};
+	virtual void canvas_light_set_blend_mode(RID p_light, CanvasLightBlendMode p_blend_mode)=0;
+	virtual void canvas_light_set_shadow_enabled(RID p_light, bool p_enabled)=0;
+	virtual void canvas_light_set_shadow_buffer_size(RID p_light, int p_size)=0;
+	virtual void canvas_light_set_shadow_filter(RID p_light, int p_size)=0;
+
+
+	virtual RID canvas_light_occluder_create()=0;
+	virtual void canvas_light_occluder_attach_to_canvas(RID p_occluder,RID p_canvas)=0;
+	virtual void canvas_light_occluder_set_enabled(RID p_occluder,bool p_enabled)=0;
+	virtual void canvas_light_occluder_set_shape(RID p_occluder,const DVector<Vector2>& p_shape)=0;
 
 	/* CURSOR */
 	virtual void cursor_set_rotation(float p_rotation, int p_cursor = 0)=0; // radians

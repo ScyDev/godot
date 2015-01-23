@@ -76,6 +76,8 @@ void AnimationPlayerEditor::_notification(int p_what) {
 			seek->set_val(player->get_current_animation_pos());
 			if (edit_anim->is_pressed())
 				editor->get_animation_editor()->set_anim_pos(player->get_current_animation_pos());
+			EditorNode::get_singleton()->get_property_editor()->refresh();
+
 		} else if (last_active) {
 			//need the last frame after it stopped
 
@@ -87,7 +89,7 @@ void AnimationPlayerEditor::_notification(int p_what) {
 		updating = false;
 	}
 
-	if (p_what==NOTIFICATION_ENTER_SCENE) {
+	if (p_what==NOTIFICATION_ENTER_TREE) {
 
 		editor->connect("hide_animation_player_editors",this,"_hide_anim_editors");
 		add_anim->set_icon( get_icon("New","EditorIcons") );
@@ -119,7 +121,7 @@ void AnimationPlayerEditor::_notification(int p_what) {
 
 	if (p_what==NOTIFICATION_READY) {
 
-		get_scene()->connect("node_removed",this,"_node_removed");
+		get_tree()->connect("node_removed",this,"_node_removed");
 	}
 
 	if (p_what==NOTIFICATION_DRAW) {
@@ -854,6 +856,8 @@ void AnimationPlayerEditor::_animation_key_editor_seek(float p_pos) {
 		return;
 
 	seek->set_val(p_pos);
+	EditorNode::get_singleton()->get_property_editor()->refresh();
+
 
 
 	//seekit

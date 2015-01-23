@@ -28,7 +28,7 @@
 /*************************************************************************/
 #include "os_android.h"
 #include "drivers/gles2/rasterizer_gles2.h"
-#include "drivers/gles1/rasterizer_gles1.h"
+
 #include "core/io/file_access_buffered_fa.h"
 #include "drivers/unix/file_access_unix.h"
 #include "drivers/unix/dir_access_unix.h"
@@ -49,11 +49,11 @@
 
 int OS_Android::get_video_driver_count() const {
 
-	return 2;
+	return 1;
 }
 const char * OS_Android::get_video_driver_name(int p_driver) const {
 
-	return p_driver==0?"GLES2":"GLES1";
+	return "GLES2";
 }
 
 OS::VideoMode OS_Android::get_default_video_mode() const {
@@ -123,13 +123,13 @@ void OS_Android::initialize(const VideoMode& p_desired,int p_video_driver,int p_
 	AudioDriverManagerSW::add_driver(&audio_driver_android);
 
 
-	if (use_gl2) {
+	if (true) {
 		RasterizerGLES2 *rasterizer_gles22=memnew( RasterizerGLES2(false,use_reload_hooks,false,use_reload_hooks ) );
 		if (gl_extensions)
 			rasterizer_gles22->set_extensions(gl_extensions);
 		rasterizer = rasterizer_gles22;
 	} else {
-		rasterizer = memnew( RasterizerGLES1(use_reload_hooks, use_reload_hooks) );
+		//rasterizer = memnew( RasterizerGLES1(use_reload_hooks, use_reload_hooks) );
 
 	}
 
@@ -699,12 +699,19 @@ void OS_Android::native_video_pause() {
 		video_pause_func();
 }
 
+String OS_Android::get_system_dir(SystemDir p_dir) const {
+
+	if (get_system_dir_func)
+		return get_system_dir_func(p_dir);
+	return String(".");
+}
+
 void OS_Android::native_video_stop() {
 	if (video_stop_func)
 		video_stop_func();
 }
 
-OS_Android::OS_Android(GFXInitFunc p_gfx_init_func,void*p_gfx_init_ud, OpenURIFunc p_open_uri_func, GetDataDirFunc p_get_data_dir_func,GetLocaleFunc p_get_locale_func,GetModelFunc p_get_model_func, ShowVirtualKeyboardFunc p_show_vk, HideVirtualKeyboardFunc p_hide_vk,  SetScreenOrientationFunc p_screen_orient,GetUniqueIDFunc p_get_unique_id, VideoPlayFunc p_video_play_func, VideoIsPlayingFunc p_video_is_playing_func, VideoPauseFunc p_video_pause_func, VideoStopFunc p_video_stop_func,bool p_use_apk_expansion) {
+OS_Android::OS_Android(GFXInitFunc p_gfx_init_func,void*p_gfx_init_ud, OpenURIFunc p_open_uri_func, GetDataDirFunc p_get_data_dir_func,GetLocaleFunc p_get_locale_func,GetModelFunc p_get_model_func, ShowVirtualKeyboardFunc p_show_vk, HideVirtualKeyboardFunc p_hide_vk,  SetScreenOrientationFunc p_screen_orient,GetUniqueIDFunc p_get_unique_id,GetSystemDirFunc p_get_sdir_func, VideoPlayFunc p_video_play_func, VideoIsPlayingFunc p_video_is_playing_func, VideoPauseFunc p_video_pause_func, VideoStopFunc p_video_stop_func,bool p_use_apk_expansion) {
 
 
 	use_apk_expansion=p_use_apk_expansion;
@@ -726,6 +733,7 @@ OS_Android::OS_Android(GFXInitFunc p_gfx_init_func,void*p_gfx_init_ud, OpenURIFu
 	get_locale_func=p_get_locale_func;
 	get_model_func=p_get_model_func;
 	get_unique_id_func=p_get_unique_id;
+	get_system_dir_func=p_get_sdir_func;
     
 	video_play_func = p_video_play_func;
 	video_is_playing_func = p_video_is_playing_func;

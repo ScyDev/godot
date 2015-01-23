@@ -544,6 +544,7 @@ static void _call_##m_type##_##m_method(Variant& r_ret,Variant& p_self,const Var
 	VCALL_PTR0R(Image,get_used_rect);
 	VCALL_PTR3R(Image,brushed);
 	VCALL_PTR1R(Image,load);
+	VCALL_PTR1R(Image,save_png);
 	VCALL_PTR3(Image,brush_transfer);
 	VCALL_PTR1R(Image,get_rect);
 	VCALL_PTR1R(Image,compressed);
@@ -684,6 +685,7 @@ static void _call_##m_type##_##m_method(Variant& r_ret,Variant& p_self,const Var
 	VCALL_PTR0R( InputEvent, is_pressed );
 	VCALL_PTR1R( InputEvent, is_action );
 	VCALL_PTR0R( InputEvent, is_echo );
+	//VCALL_PTR2( InputEvent, set_as_action );
 
 	struct ConstructData {
 
@@ -754,6 +756,11 @@ static void _call_##m_type##_##m_method(Variant& r_ret,Variant& p_self,const Var
 
 		r_ret=Quat(*p_args[0],*p_args[1],*p_args[2],*p_args[3]);
 	}
+
+    static void Quat_init2(Variant& r_ret,const Variant** p_args) {
+
+        r_ret=Quat(((Vector3)(*p_args[0])),((float)(*p_args[1])));
+    }
 
 	static void Color_init1(Variant& r_ret,const Variant** p_args) {
 
@@ -1325,6 +1332,7 @@ _VariantCall::addfunc(Variant::m_vtype,Variant::m_ret,_SCS(#m_method),VCALL(m_cl
 	ADDFUNC4(IMAGE, NIL, Image, put_pixel, INT, "x", INT, "y", COLOR, "color", INT, "mipmap_level", varray(0));
 	ADDFUNC3(IMAGE, IMAGE, Image, brushed, IMAGE, "src", IMAGE, "brush", VECTOR2, "pos", varray(0));
 	ADDFUNC1(IMAGE, INT, Image, load, STRING, "path", varray(0));
+	ADDFUNC1(IMAGE, INT, Image, save_png, STRING, "path", varray(0));
 	ADDFUNC3(IMAGE, NIL, Image, brush_transfer, IMAGE, "src", IMAGE, "brush", VECTOR2, "pos", varray(0));
 	ADDFUNC0(IMAGE, RECT2, Image, get_used_rect, varray(0));
 	ADDFUNC1(IMAGE, IMAGE, Image, get_rect, RECT2, "area", varray(0));
@@ -1488,6 +1496,7 @@ _VariantCall::addfunc(Variant::m_vtype,Variant::m_ret,_SCS(#m_method),VCALL(m_cl
 	ADDFUNC0(INPUT_EVENT,BOOL,InputEvent,is_pressed,varray());
 	ADDFUNC1(INPUT_EVENT,BOOL,InputEvent,is_action,STRING,"action",varray());
 	ADDFUNC0(INPUT_EVENT,BOOL,InputEvent,is_echo,varray());
+	//ADDFUNC2(INPUT_EVENT,NIL,InputEvent,set_as_action,STRING,"action",BOOL,"pressed",varray());
 
 	/* REGISTER CONSTRUCTORS */
 
@@ -1505,6 +1514,7 @@ _VariantCall::addfunc(Variant::m_vtype,Variant::m_ret,_SCS(#m_method),VCALL(m_cl
 	_VariantCall::add_constructor(_VariantCall::Plane_init3,Variant::PLANE,"normal",Variant::VECTOR3,"d",Variant::REAL);
 
 	_VariantCall::add_constructor(_VariantCall::Quat_init1,Variant::QUAT,"x",Variant::REAL,"y",Variant::REAL,"z",Variant::REAL,"w",Variant::REAL);
+    _VariantCall::add_constructor(_VariantCall::Quat_init2,Variant::QUAT,"axis",Variant::VECTOR3,"angle",Variant::REAL);
 
 	_VariantCall::add_constructor(_VariantCall::Color_init1,Variant::COLOR,"r",Variant::REAL,"g",Variant::REAL,"b",Variant::REAL,"a",Variant::REAL);
 	_VariantCall::add_constructor(_VariantCall::Color_init2,Variant::COLOR,"r",Variant::REAL,"g",Variant::REAL,"b",Variant::REAL);

@@ -256,7 +256,7 @@ void ProjectExportDialog::_notification(int p_what) {
 
 	switch(p_what) {
 
-		case NOTIFICATION_ENTER_SCENE: {
+		case NOTIFICATION_ENTER_TREE: {
 
 
 			CenterContainer *cc = memnew( CenterContainer );
@@ -320,7 +320,7 @@ void ProjectExportDialog::_notification(int p_what) {
 			_update_group_tree();
 
 		} break;
-		case NOTIFICATION_EXIT_SCENE: {
+		case NOTIFICATION_EXIT_TREE: {
 
 		} break;
 		case MainLoop::NOTIFICATION_WM_FOCUS_IN: {
@@ -482,7 +482,7 @@ Error ProjectExportDialog::export_platform(const String& p_platform, const Strin
 		return ERR_CANT_CREATE;
 	} else {
 		if (p_quit_after) {
-			get_scene()->quit();
+			get_tree()->quit();
 		}
 	}
 
@@ -529,6 +529,8 @@ void ProjectExportDialog::_group_selected() {
 
 
 	_update_group(); //?
+
+	_update_group_tree();
 }
 
 String ProjectExportDialog::_get_selected_group() {
@@ -738,6 +740,8 @@ void ProjectExportDialog::_group_changed(Variant v) {
 	EditorNode::get_undo_redo()->add_undo_method(this,"_save_export_cfg");
 	EditorNode::get_undo_redo()->commit_action();
 	updating=false;
+	// update atlas preview button
+	_update_group();
 }
 
 void ProjectExportDialog::_group_item_edited() {
@@ -1236,8 +1240,8 @@ ProjectExportDialog::ProjectExportDialog(EditorNode *p_editor) {
 	group_options->add_child(atlas_preview);
 	atlas_preview->show();
 	atlas_preview->connect("pressed",this,"_group_atlas_preview");
-	EmptyControl *ec = memnew(EmptyControl );
-	ec->set_minsize(Size2(150,1));
+	Control *ec = memnew(Control );
+	ec->set_custom_minimum_size(Size2(150,1));
 	gvb->add_child(ec);
 
 	VBoxContainer *group_vb_right = memnew( VBoxContainer );

@@ -79,7 +79,7 @@ RID Rasterizer::_create_shader(const FixedMaterialShaderKey& p_key) {
 	if (texcoords_used&(1<<VS::FIXED_MATERIAL_TEXCOORD_UV_TRANSFORM)) {
 
 		code+="uniform mat4 fmp_uv_xform;\n";
-		code+="vec2 uv_xform = fmp_uv_xform * UV;\n";
+		code+="vec2 uv_xform = (fmp_uv_xform * vec4(UV,0,1)).xy;\n";
 	}
 
 	/* HANDLE NORMAL MAPPING */
@@ -568,8 +568,9 @@ void Rasterizer::_update_fixed_materials() {
 			}
 
 			material_set_param(fm.self,_fixed_material_uv_xform_name,fm.uv_xform);
-			if (fm.use_pointsize)
+			if (fm.use_pointsize) {
 				material_set_param(fm.self,_fixed_material_point_size_name,fm.point_size);
+			}
 		}
 
 		fixed_material_dirty_list.remove(fixed_material_dirty_list.first());
@@ -619,6 +620,8 @@ Rasterizer::Rasterizer() {
 
 	_fixed_material_uv_xform_name="fmp_uv_xform";
 	_fixed_material_point_size_name="fmp_point_size";
+
+	draw_viewport_func=NULL;
 
 	ERR_FAIL_COND( sizeof(FixedMaterialShaderKey)!=4);
 

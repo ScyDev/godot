@@ -436,7 +436,10 @@ ShaderLanguage::Token ShaderLanguage::read_token(const CharType* p_text,int p_le
 				return Token(TK_INDENTIFIER,str);
 			}
 
-			return Token(TK_ERROR,"Unknown character");
+			if (GETCHAR(0)>32)
+				return Token(TK_ERROR,"Tokenizer: Unknown character #"+itos(GETCHAR(0))+": '"+String::chr(GETCHAR(0))+"'");
+			else
+				return Token(TK_ERROR,"Tokenizer: Unknown character #"+itos(GETCHAR(0)));
 
 		} break;
 	}
@@ -463,9 +466,9 @@ Error ShaderLanguage::tokenize(const String& p_text,Vector<Token> *p_tokens,Stri
 		if (t.type==TK_ERROR) {
 
 			if (r_error) {
-				return ERR_COMPILATION_FAILED;
 				*r_error=t.text;
 				*r_err_line=line;
+				return ERR_COMPILATION_FAILED;
 			}
 		}
 
@@ -765,16 +768,20 @@ const ShaderLanguage::IntrinsicFuncDef ShaderLanguage::intrinsic_func_defs[]={
 	//constructors
 	{"bool",TYPE_BOOL,{TYPE_BOOL,TYPE_VOID}},
 	{"float",TYPE_FLOAT,{TYPE_FLOAT,TYPE_VOID}},
+	{"vec2",TYPE_VEC2,{TYPE_FLOAT,TYPE_VOID}},
 	{"vec2",TYPE_VEC2,{TYPE_FLOAT,TYPE_FLOAT,TYPE_VOID}},
+	{"vec3",TYPE_VEC3,{TYPE_FLOAT,TYPE_VOID}},
 	{"vec3",TYPE_VEC3,{TYPE_FLOAT,TYPE_FLOAT,TYPE_FLOAT,TYPE_VOID}},
 	{"vec3",TYPE_VEC3,{TYPE_VEC2,TYPE_FLOAT,TYPE_VOID}},
 	{"vec3",TYPE_VEC3,{TYPE_FLOAT,TYPE_VEC2,TYPE_VOID}},
+	{"vec4",TYPE_VEC4,{TYPE_FLOAT,TYPE_VOID}},
 	{"vec4",TYPE_VEC4,{TYPE_FLOAT,TYPE_FLOAT,TYPE_FLOAT,TYPE_FLOAT,TYPE_VOID}},
 	{"vec4",TYPE_VEC4,{TYPE_FLOAT,TYPE_VEC2,TYPE_FLOAT,TYPE_VOID}},
 	{"vec4",TYPE_VEC4,{TYPE_VEC2,TYPE_FLOAT,TYPE_FLOAT,TYPE_VOID}},
 	{"vec4",TYPE_VEC4,{TYPE_FLOAT,TYPE_FLOAT,TYPE_VEC2,TYPE_VOID}},
 	{"vec4",TYPE_VEC4,{TYPE_FLOAT,TYPE_VEC3,TYPE_VOID}},
 	{"vec4",TYPE_VEC4,{TYPE_VEC3,TYPE_FLOAT,TYPE_VOID}},
+	{"vec4",TYPE_VEC4,{TYPE_VEC2,TYPE_VEC2,TYPE_VOID}},
 	{"mat3",TYPE_MAT3,{TYPE_VEC3,TYPE_VEC3,TYPE_VEC3,TYPE_VOID}},
 	{"mat4",TYPE_MAT4,{TYPE_VEC4,TYPE_VEC4,TYPE_VEC4,TYPE_VEC4,TYPE_VOID}},
 	//intrinsics - trigonometry
@@ -853,6 +860,9 @@ const ShaderLanguage::IntrinsicFuncDef ShaderLanguage::intrinsic_func_defs[]={
 	{"clamp",TYPE_VEC2,{TYPE_VEC2,TYPE_VEC2,TYPE_VEC2,TYPE_VOID}},
 	{"clamp",TYPE_VEC3,{TYPE_VEC3,TYPE_VEC3,TYPE_VEC3,TYPE_VOID}},
 	{"clamp",TYPE_VEC4,{TYPE_VEC4,TYPE_VEC4,TYPE_VEC4,TYPE_VOID}},
+	{"clamp",TYPE_VEC2,{TYPE_VEC2,TYPE_FLOAT,TYPE_FLOAT,TYPE_VOID}},
+	{"clamp",TYPE_VEC3,{TYPE_VEC3,TYPE_FLOAT,TYPE_FLOAT,TYPE_VOID}},
+	{"clamp",TYPE_VEC4,{TYPE_VEC4,TYPE_FLOAT,TYPE_FLOAT,TYPE_VOID}},
 	{"mix",TYPE_FLOAT,{TYPE_FLOAT,TYPE_FLOAT,TYPE_FLOAT,TYPE_VOID}},
 	{"mix",TYPE_VEC2,{TYPE_VEC2,TYPE_VEC2,TYPE_FLOAT,TYPE_VOID}},
 	{"mix",TYPE_VEC2,{TYPE_VEC2,TYPE_VEC2,TYPE_VEC2,TYPE_VOID}},
@@ -890,6 +900,7 @@ const ShaderLanguage::IntrinsicFuncDef ShaderLanguage::intrinsic_func_defs[]={
 	{"normalize",TYPE_VEC3,{TYPE_VEC3,TYPE_VOID}},
 	{"normalize",TYPE_VEC4,{TYPE_VEC4,TYPE_VOID}},
 	{"reflect",TYPE_VEC3,{TYPE_VEC3,TYPE_VEC3,TYPE_VOID}},
+	{"refract",TYPE_VEC3,{TYPE_VEC3,TYPE_VEC3,TYPE_FLOAT,TYPE_VOID}},
 	//intrinsics - texture
 	{"tex",TYPE_VEC4,{TYPE_TEXTURE,TYPE_VEC2,TYPE_VOID}},
 	{"texcube",TYPE_VEC4,{TYPE_CUBEMAP,TYPE_VEC3,TYPE_VOID}},
@@ -952,10 +963,16 @@ const ShaderLanguage::OperatorDef ShaderLanguage::operator_defs[]={
 	{OP_ASSIGN_ADD,TYPE_VOID,{TYPE_VEC2,TYPE_VEC2}},
 	{OP_ASSIGN_ADD,TYPE_VOID,{TYPE_VEC3,TYPE_VEC3}},
 	{OP_ASSIGN_ADD,TYPE_VOID,{TYPE_VEC4,TYPE_VEC4}},
+	{OP_ASSIGN_ADD,TYPE_VOID,{TYPE_VEC2,TYPE_FLOAT}},
+	{OP_ASSIGN_ADD,TYPE_VOID,{TYPE_VEC3,TYPE_FLOAT}},
+	{OP_ASSIGN_ADD,TYPE_VOID,{TYPE_VEC4,TYPE_FLOAT}},
 	{OP_ASSIGN_SUB,TYPE_VOID,{TYPE_FLOAT,TYPE_FLOAT}},
 	{OP_ASSIGN_SUB,TYPE_VOID,{TYPE_VEC2,TYPE_VEC2}},
 	{OP_ASSIGN_SUB,TYPE_VOID,{TYPE_VEC3,TYPE_VEC3}},
 	{OP_ASSIGN_SUB,TYPE_VOID,{TYPE_VEC4,TYPE_VEC4}},
+	{OP_ASSIGN_SUB,TYPE_VOID,{TYPE_VEC2,TYPE_FLOAT}},
+	{OP_ASSIGN_SUB,TYPE_VOID,{TYPE_VEC3,TYPE_FLOAT}},
+	{OP_ASSIGN_SUB,TYPE_VOID,{TYPE_VEC4,TYPE_FLOAT}},
 	{OP_ASSIGN_MUL,TYPE_VOID,{TYPE_FLOAT,TYPE_FLOAT}},
 	{OP_ASSIGN_MUL,TYPE_VOID,{TYPE_VEC2,TYPE_VEC2}},
 	{OP_ASSIGN_MUL,TYPE_VOID,{TYPE_VEC2,TYPE_FLOAT}},
@@ -1038,7 +1055,7 @@ const ShaderLanguage::BuiltinsDef ShaderLanguage::vertex_builtins_defs[]={
 const ShaderLanguage::BuiltinsDef ShaderLanguage::fragment_builtins_defs[]={
 
 	{ "VERTEX", TYPE_VEC3},
-	{ "POSITION", TYPE_VEC3},
+	{ "POSITION", TYPE_VEC4},
 	{ "NORMAL", TYPE_VEC3},
 	{ "TANGENT", TYPE_VEC3},
 	{ "BINORMAL", TYPE_VEC3},
@@ -1080,6 +1097,62 @@ const ShaderLanguage::BuiltinsDef ShaderLanguage::light_builtins_defs[]={
 	{ "SPECULAR", TYPE_VEC3},
 	{ "SPECULAR_EXP", TYPE_FLOAT},
 	{ "SHADE_PARAM", TYPE_FLOAT},
+	{ "LIGHT", TYPE_VEC3},
+	{ "POINT_COORD", TYPE_VEC2},
+//	{ "SCREEN_POS", TYPE_VEC2},
+//	{ "SCREEN_TEXEL_SIZE", TYPE_VEC2},
+	{ "TIME", TYPE_FLOAT},
+	{ NULL, TYPE_VOID}
+
+};
+
+
+
+const ShaderLanguage::BuiltinsDef ShaderLanguage::ci_vertex_builtins_defs[]={
+
+	{ "SRC_VERTEX", TYPE_VEC2},
+	{ "VERTEX", TYPE_VEC2},
+	{ "WORLD_VERTEX", TYPE_VEC2},
+	{ "UV", TYPE_VEC2},
+	{ "COLOR", TYPE_VEC4},
+	{ "VAR1", TYPE_VEC4},
+	{ "VAR2", TYPE_VEC4},
+	{ "POINT_SIZE", TYPE_FLOAT},
+
+	//builtins
+	{ "WORLD_MATRIX", TYPE_MAT4},
+	{ "PROJECTION_MATRIX", TYPE_MAT4},
+	{ "EXTRA_MATRIX", TYPE_MAT4},	
+	{ "TIME", TYPE_FLOAT},
+	{ NULL, TYPE_VOID},
+};
+const ShaderLanguage::BuiltinsDef ShaderLanguage::ci_fragment_builtins_defs[]={
+
+	{ "SRC_COLOR", TYPE_VEC4},
+	{ "POSITION", TYPE_VEC4},
+	{ "NORMAL", TYPE_VEC3},
+	{ "UV", TYPE_VEC2},
+	{ "COLOR", TYPE_VEC4},
+	{ "TEXTURE", TYPE_TEXTURE},
+	{ "TEXTURE_PIXEL_SIZE", TYPE_VEC2},
+	{ "VAR1", TYPE_VEC4},
+	{ "VAR2", TYPE_VEC4},
+	{ "SCREEN_UV", TYPE_VEC2},
+	{ "POINT_COORD", TYPE_VEC2},
+
+//	{ "SCREEN_POS", TYPE_VEC2},
+//	{ "SCREEN_TEXEL_SIZE", TYPE_VEC2},
+	{ "TIME", TYPE_FLOAT},
+	{ NULL, TYPE_VOID}
+
+};
+
+const ShaderLanguage::BuiltinsDef ShaderLanguage::ci_light_builtins_defs[]={
+
+	{ "COLOR", TYPE_VEC4},
+	{ "NORMAL", TYPE_VEC3},
+	{ "LIGHT_DIR", TYPE_VEC2},
+	{ "LIGHT_DISTANCE", TYPE_FLOAT},
 	{ "LIGHT", TYPE_VEC3},
 	{ "POINT_COORD", TYPE_VEC2},
 //	{ "SCREEN_POS", TYPE_VEC2},
@@ -1201,9 +1274,25 @@ ShaderLanguage::Node* ShaderLanguage::validate_function_call(Parser&parser, Oper
 			Variant data;
 			switch(p_func->return_cache) {
 				case TYPE_FLOAT: data = cdata[0]; break;
-				case TYPE_VEC2: data = Vector2(cdata[0],cdata[1]); break;
-				case TYPE_VEC3: data = Vector3(cdata[0],cdata[1],cdata[2]); break;
-				case TYPE_VEC4: data = Plane(cdata[0],cdata[1],cdata[2],cdata[3]); break;
+				case TYPE_VEC2:
+					if (cdata.size()==1)
+						data = Vector2(cdata[0],cdata[0]);
+					else
+						data = Vector2(cdata[0],cdata[1]);
+
+					break;
+				case TYPE_VEC3:
+					if (cdata.size()==1)
+						data = Vector3(cdata[0],cdata[0],cdata[0]);
+					else
+						data = Vector3(cdata[0],cdata[1],cdata[2]);
+					break;
+				case TYPE_VEC4:
+					if (cdata.size()==1)
+						data = Plane(cdata[0],cdata[0],cdata[0],cdata[0]);
+					else
+						data = Plane(cdata[0],cdata[1],cdata[2],cdata[3]);
+					break;
 			}
 
 			cn->datatype=p_func->return_cache;
@@ -2439,6 +2528,27 @@ Error ShaderLanguage::parse(const Vector<Token>& p_tokens,ShaderType p_type,Comp
 				idx++;
 			}
 		} break;
+		case SHADER_CANVAS_ITEM_VERTEX: {
+			int idx=0;
+			while (ci_vertex_builtins_defs[idx].name) {
+				parser.program->builtin_variables[ci_vertex_builtins_defs[idx].name]=ci_vertex_builtins_defs[idx].type;
+				idx++;
+			}
+		} break;
+		case SHADER_CANVAS_ITEM_FRAGMENT: {
+			int idx=0;
+			while (ci_fragment_builtins_defs[idx].name) {
+				parser.program->builtin_variables[ci_fragment_builtins_defs[idx].name]=ci_fragment_builtins_defs[idx].type;
+				idx++;
+			}
+		} break;
+		case SHADER_CANVAS_ITEM_LIGHT: {
+			int idx=0;
+			while (ci_light_builtins_defs[idx].name) {
+				parser.program->builtin_variables[ci_light_builtins_defs[idx].name]=ci_light_builtins_defs[idx].type;
+				idx++;
+			}
+		} break;
 		case SHADER_POST_PROCESS: {
 			int idx=0;
 			while (postprocess_fragment_builtins_defs[idx].name) {
@@ -2485,6 +2595,9 @@ Error ShaderLanguage::compile(const String& p_code,ShaderType p_type,CompileFunc
 	uint64_t t = OS::get_singleton()->get_ticks_usec();
 
 	Error err = tokenize(p_code,&tokens,r_error,r_err_line,r_err_column);
+	if (err!=OK) {
+		print_line("tokenizer error!");
+	}
 
 	double tf = (OS::get_singleton()->get_ticks_usec()-t)/1000.0;
 	//print_line("tokenize time: "+rtos(tf));
@@ -2533,6 +2646,28 @@ void ShaderLanguage::get_keyword_list(ShaderType p_type, List<String> *p_keyword
 				idx++;
 			}
 		} break;
+		case SHADER_CANVAS_ITEM_VERTEX: {
+			idx=0;
+			while (ci_vertex_builtins_defs[idx].name) {
+				p_keywords->push_back(ci_vertex_builtins_defs[idx].name);
+				idx++;
+			}
+		} break;
+		case SHADER_CANVAS_ITEM_FRAGMENT: {
+			idx=0;
+			while (ci_fragment_builtins_defs[idx].name) {
+				p_keywords->push_back(ci_fragment_builtins_defs[idx].name);
+				idx++;
+			}
+		} break;
+		case SHADER_CANVAS_ITEM_LIGHT: {
+			idx=0;
+			while (ci_light_builtins_defs[idx].name) {
+				p_keywords->push_back(ci_light_builtins_defs[idx].name);
+				idx++;
+			}
+		} break;
+
 		case SHADER_POST_PROCESS: {
 			idx=0;
 			while (postprocess_fragment_builtins_defs[idx].name) {

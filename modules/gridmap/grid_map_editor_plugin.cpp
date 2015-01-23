@@ -974,7 +974,7 @@ void GridMapEditor::update_grid() {
 
 void GridMapEditor::_notification(int p_what) {
 
-	if (p_what==NOTIFICATION_ENTER_SCENE) {
+	if (p_what==NOTIFICATION_ENTER_TREE) {
 
 		theme_pallete->connect("cell_selected", this,"_item_selected_cbk");
 		edit_mode->connect("item_selected", this,"_edit_mode_changed");
@@ -983,16 +983,16 @@ void GridMapEditor::_notification(int p_what) {
 		for(int i=0;i<3;i++) {
 
 			grid[i]=VS::get_singleton()->mesh_create();
-			grid_instance[i]=VS::get_singleton()->instance_create2(grid[i],get_scene()->get_root()->get_world()->get_scenario());
+			grid_instance[i]=VS::get_singleton()->instance_create2(grid[i],get_tree()->get_root()->get_world()->get_scenario());
 		}
 
-		selection_instance = VisualServer::get_singleton()->instance_create2(selection_mesh,get_scene()->get_root()->get_world()->get_scenario());
-		duplicate_instance = VisualServer::get_singleton()->instance_create2(duplicate_mesh,get_scene()->get_root()->get_world()->get_scenario());
+		selection_instance = VisualServer::get_singleton()->instance_create2(selection_mesh,get_tree()->get_root()->get_world()->get_scenario());
+		duplicate_instance = VisualServer::get_singleton()->instance_create2(duplicate_mesh,get_tree()->get_root()->get_world()->get_scenario());
 
 		_update_selection_transform();
 		_update_duplicate_indicator();
 
-	} else if (p_what==NOTIFICATION_EXIT_SCENE) {
+	} else if (p_what==NOTIFICATION_EXIT_TREE) {
 
 		for(int i=0;i<3;i++) {
 
@@ -1025,7 +1025,7 @@ void GridMapEditor::_notification(int p_what) {
 
 		if (lock_view) {
 
-			EditorNode*editor = get_scene()->get_root()->get_child(0)->cast_to<EditorNode>();
+			EditorNode*editor = get_tree()->get_root()->get_child(0)->cast_to<EditorNode>();
 
 			Plane p;
 			p.normal[edit_axis]=1.0;
@@ -1055,7 +1055,7 @@ void GridMapEditor::_update_cursor_instance() {
 			Ref<Mesh> mesh = node->get_theme()->get_item_mesh(selected_pallete);
 			if (!mesh.is_null() && mesh->get_rid().is_valid()) {
 
-				cursor_instance=VisualServer::get_singleton()->instance_create2(mesh->get_rid(),get_scene()->get_root()->get_world()->get_scenario());
+				cursor_instance=VisualServer::get_singleton()->instance_create2(mesh->get_rid(),get_tree()->get_root()->get_world()->get_scenario());
 				VisualServer::get_singleton()->instance_set_transform(cursor_instance,cursor_transform);
 			}
 		}
@@ -1192,8 +1192,8 @@ GridMapEditor::GridMapEditor(EditorNode *p_editor) {
 	undo_redo=p_editor->get_undo_redo();
 
 	int mw = EDITOR_DEF("grid_map/palette_min_width",230);
-	EmptyControl *ec = memnew( EmptyControl);
-	ec->set_minsize(Size2(mw,0));
+	Control *ec = memnew( Control);
+	ec->set_custom_minimum_size(Size2(mw,0));
 	add_child(ec);
 
 
@@ -1222,9 +1222,9 @@ GridMapEditor::GridMapEditor(EditorNode *p_editor) {
 	options->get_popup()->add_item("Cursor Rotate X",MENU_OPTION_CURSOR_ROTATE_X,KEY_A);
 	options->get_popup()->add_item("Cursor Rotate Y",MENU_OPTION_CURSOR_ROTATE_Y,KEY_S);
 	options->get_popup()->add_item("Cursor Rotate Z",MENU_OPTION_CURSOR_ROTATE_Z,KEY_D);
-	options->get_popup()->add_item("Cursor Back Rotate X",MENU_OPTION_CURSOR_ROTATE_X,KEY_ALT+KEY_A);
-	options->get_popup()->add_item("Cursor Back Rotate Y",MENU_OPTION_CURSOR_ROTATE_Y,KEY_ALT+KEY_S);
-	options->get_popup()->add_item("Cursor Back Rotate Z",MENU_OPTION_CURSOR_ROTATE_Z,KEY_ALT+KEY_D);
+	options->get_popup()->add_item("Cursor Back Rotate X",MENU_OPTION_CURSOR_ROTATE_X,KEY_MASK_SHIFT+KEY_A);
+	options->get_popup()->add_item("Cursor Back Rotate Y",MENU_OPTION_CURSOR_ROTATE_Y,KEY_MASK_SHIFT+KEY_S);
+	options->get_popup()->add_item("Cursor Back Rotate Z",MENU_OPTION_CURSOR_ROTATE_Z,KEY_MASK_SHIFT+KEY_D);
 	options->get_popup()->add_item("Cursor Clear Rotation",MENU_OPTION_CURSOR_CLEAR_ROTATION,KEY_W);
 	options->get_popup()->add_separator();
 	options->get_popup()->add_check_item("Duplicate Selects",MENU_OPTION_DUPLICATE_SELECTS);
