@@ -1,0 +1,4 @@
+::res://::1422004320
+icon.png::ImageTexture::1422001887::
+new_scene.scn::PackedScene::1422004315::
+recursive_reference_compare_fail.gd::GDScript::1422004320::
